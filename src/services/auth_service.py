@@ -6,7 +6,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional
 import asyncio
-
+import os
 from config.settings import WEBHOOK_BASE_URL, is_no_auth_mode
 from fastapi import HTTPException
 
@@ -54,7 +54,7 @@ class AuthService:
         if IBM_AUTH_ENABLED and purpose == "app_auth":
             raise HTTPException(
                 status_code=409,
-                detail="IBM AMS authentication is active. Login is handled via the IBM Watsonx Data session cookie."
+                detail="IBM AMS authentication is active. Login is handled via the IBM Watsonx Data session cookie.",
             )
 
         # Check if we're in no-auth mode
@@ -116,7 +116,6 @@ class AuthService:
             return await self._init_direct_connection(connector_type, connection_id)
 
         # Get OAuth configuration from connector and OAuth classes
-        import os
 
         # Map connector types to their connector and OAuth classes
         connector_class_map = {
@@ -161,15 +160,17 @@ class AuthService:
                 f"Set {client_key} and {secret_key} in the environment."
             )
 
-        oauth_config = {
-            "client_id": client_id,
-            "scopes": scopes,
-            "redirect_uri": redirect_uri,
-            "authorization_endpoint": auth_endpoint,
-            "token_endpoint": token_endpoint,
+        return {
+            "connection_id": connection_id,
+            "oauth_config": {
+                "client_id": client_id,
+                "scopes": scopes,
+                "redirect_uri": redirect_uri,
+                "authorization_endpoint": auth_endpoint,
+                "token_endpoint": token_endpoint,
+            },
+            "public_return_url": os.getenv("PUBLIC_RETURN_URL"),
         }
-
-        return {"connection_id": connection_id, "oauth_config": oauth_config}
 
     async def _init_direct_connection(
         self, connector_type: str, connection_id: str
@@ -215,9 +216,7 @@ class AuthService:
             await self.connector_service.connection_manager.delete_connection(
                 connection_id
             )
-            raise ValueError(
-                f"Failed to connect {connector_type}: {exc}"
-            ) from exc
+            raise ValueError(f"Failed to connect {connector_type}: {exc}") from exc
 
         return {
             "connection_id": connection_id,
@@ -331,6 +330,7 @@ class AuthService:
             # Save tokens to file
             token_file_path = connection_config.config["token_file"]
             from utils.encryption import write_encrypted_file
+
             await write_encrypted_file(token_file_path, json.dumps(token_file_data))
 
             # Route based on purpose
@@ -593,4 +593,8 @@ class AuthService:
 
             return user_data
         else:
-            return {"authenticated": False, "ibm_auth_mode": IBM_AUTH_ENABLED, "user": None}
+            return {
+                "authenticated": False,
+                "ibm_auth_mode": IBM_AUTH_ENABLED,
+                "user": None,
+            }
