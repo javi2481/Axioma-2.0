@@ -1,8 +1,8 @@
 """
 Unit tests for OpenSearch disk space error detection.
 
-When OpenSearch disk usage exceeds the high-watermark (90%) or flood-stage
-watermark (95%), it blocks operations and returns errors with specific
+When OpenSearch disk usage exceeds the high-watermark or flood-stage
+watermark, it blocks operations and returns errors with specific
 signatures. These tests verify that those signatures are correctly detected
 and surfaced as OpenSearchDiskSpaceError.
 """
@@ -69,8 +69,8 @@ class TestIsDiskSpaceError:
 # ---------------------------------------------------------------------------
 
 class TestDiskSpaceErrorMessage:
-    def test_message_mentions_threshold(self):
-        assert "90%" in DISK_SPACE_ERROR_MESSAGE
+    def test_message_mentions_disk_space_blocked(self):
+        assert "run out of available disk space" in DISK_SPACE_ERROR_MESSAGE.lower()
 
     def test_message_mentions_disk_space(self):
         assert "disk" in DISK_SPACE_ERROR_MESSAGE.lower()
