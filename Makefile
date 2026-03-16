@@ -700,7 +700,7 @@ test-unit: ## Run unit tests only
 test-integration: ## Run integration tests (requires infrastructure)
 	@echo "$(YELLOW)Running integration tests (requires infrastructure)...$(NC)"
 	@echo "$(CYAN)Make sure to run 'make dev-local' first!$(NC)"
-	uv run pytest tests/integration/ -v
+	uv run pytest tests/integration/ --ignore=tests/integration/test_sdk.py -v
 
 test-ci: ensure-rsa-keys ensure-config-dir ## Start infra, run integration + SDK tests, tear down (uses DockerHub images)
 	@set -e; \
@@ -792,10 +792,7 @@ test-ci: ensure-rsa-keys ensure-config-dir ## Start infra, run integration + SDK
 		curl -s http://localhost:3000/ >/dev/null 2>&1 && break || sleep 2; \
 	done; \
 	echo "$(PURPLE)Running Python SDK integration tests$(NC)"; \
-	cd sdks/python && \
-	uv sync --extra dev && \
-	OPENRAG_URL=http://localhost:3000 uv run pytest tests/test_integration.py -vv -s || TEST_RESULT=1; \
-	cd ../..; \
+	SDK_TESTS_ONLY=true OPENRAG_URL=http://localhost:3000 uv run pytest tests/integration/test_sdk.py -vv -s || TEST_RESULT=1; \
 	echo "$(PURPLE)Running TypeScript SDK integration tests$(NC)"; \
 	cd sdks/typescript && \
 	npm install && npm run build && \
@@ -900,10 +897,7 @@ test-ci-local: ensure-rsa-keys ensure-config-dir ## Same as test-ci but builds a
 		curl -s http://localhost:3000/ >/dev/null 2>&1 && break || sleep 2; \
 	done; \
 	echo "$(PURPLE)Running Python SDK integration tests$(NC)"; \
-	cd sdks/python && \
-	uv sync --extra dev && \
-	OPENRAG_URL=http://localhost:3000 uv run pytest tests/test_integration.py -vv -s || TEST_RESULT=1; \
-	cd ../..; \
+	SDK_TESTS_ONLY=true OPENRAG_URL=http://localhost:3000 uv run pytest tests/integration/test_sdk.py -vv -s || TEST_RESULT=1; \
 	echo "$(PURPLE)Running TypeScript SDK integration tests$(NC)"; \
 	cd sdks/typescript && \
 	npm install && npm run build && \
@@ -935,7 +929,7 @@ test-sdk: ## Run SDK integration tests (requires running OpenRAG at localhost:30
 	@echo "$(CYAN)Make sure OpenRAG is running at localhost:3000 (make dev)$(NC)"
 	@echo ""
 	@echo "$(PURPLE)Running Python SDK tests...$(NC)"
-	cd sdks/python && uv sync --extra dev && OPENRAG_URL=http://localhost:3000 uv run pytest tests/test_integration.py -vv -s
+	SDK_TESTS_ONLY=true OPENRAG_URL=http://localhost:3000 uv run pytest tests/integration/test_sdk.py -vv -s
 	@echo ""
 	@echo "$(PURPLE)Running TypeScript SDK tests...$(NC)"
 	cd sdks/typescript && npm install && npm run build && OPENRAG_URL=http://localhost:3000 npm test
