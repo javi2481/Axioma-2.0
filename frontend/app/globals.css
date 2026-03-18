@@ -283,6 +283,11 @@
     --button-tertiary: 217 100% 74%;
   }
 
+  /* IBM Settings: Override muted-foreground for settings page */
+  [data-theme="ibm"] .ibm-settings-page {
+    --muted-foreground: 0 0% 78%; /* #C6C6C6 - IBM Gray 30 */
+  }
+
   /* IBM Settings: section titles (productive heading-04); beats CardTitle utilities */
   [data-theme="ibm"] .ibm-settings-section-title {
     color: hsl(var(--text-text-01));
@@ -302,6 +307,72 @@
   [data-theme="ibm"] .ibm-settings-page a[href]:hover {
     text-decoration: underline;
     text-underline-offset: 2px;
+  }
+
+  /* IBM Carbon Design System: Input fields styling */
+  [data-theme="ibm"] .primary-input {
+    border: none;
+    border-radius: 0;
+    border-bottom: 2px solid hsl(var(--input));
+    background-color: hsl(var(--card));
+  }
+
+  [data-theme="ibm"] .primary-input:hover {
+    border-bottom-color: hsl(var(--foreground));
+  }
+
+  [data-theme="ibm"] .primary-input:focus {
+    border-bottom-color: hsl(var(--primary));
+  }
+
+  /* IBM Carbon Design System: Placeholder text uses secondary color #C6C6C6 */
+  [data-theme="ibm"] .primary-input::placeholder {
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* IBM Carbon Design System: Select/Combobox styling (ModelSelector buttons) */
+  [data-theme="ibm"] .ibm-settings-page button[role="combobox"] {
+    border: none;
+    border-radius: 0;
+    border-bottom: 2px solid hsl(var(--input));
+    background-color: hsl(var(--card));
+  }
+
+  [data-theme="ibm"]
+    .ibm-settings-page
+    button[role="combobox"]:hover:not(:disabled) {
+    border-bottom-color: hsl(var(--foreground));
+    background-color: hsl(var(--card));
+  }
+
+  [data-theme="ibm"] .ibm-settings-page button[role="combobox"]:focus {
+    border-bottom-color: hsl(var(--primary));
+  }
+
+  /* IBM Carbon Design System: Regular Select trigger styling */
+  [data-theme="ibm"] .ibm-settings-page [data-radix-select-trigger] {
+    border: none;
+    border-radius: 0;
+    border-bottom: 2px solid hsl(var(--input));
+    background-color: hsl(var(--card));
+  }
+
+  [data-theme="ibm"]
+    .ibm-settings-page
+    [data-radix-select-trigger]:hover:not(:disabled) {
+    border-bottom-color: hsl(var(--foreground));
+    background-color: hsl(var(--card));
+  }
+
+  [data-theme="ibm"] .ibm-settings-page [data-radix-select-trigger]:focus {
+    border-bottom-color: hsl(var(--primary));
+  }
+
+  /* IBM Carbon Design System: Flatten cards in settings page */
+  [data-theme="ibm"] .ibm-settings-page .rounded-xl {
+    border-color: transparent;
+    background-color: transparent;
+    box-shadow: none;
   }
 
   /* IBM chat nudges / quick actions */
