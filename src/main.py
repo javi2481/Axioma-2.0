@@ -305,7 +305,9 @@ async def init_index(opensearch_client=None):
                 index_name=API_KEYS_INDEX_NAME,
             )
 
-        # Configure alerting plugin security settings (admin-level, always uses global client)
+        # Configure alerting plugin security settings (admin-level).
+        # Ensure the global OpenSearch client used by alerting points to the
+        # same authenticated/admin-capable client selected above (including IBM mode).
         await configure_alerting_security()
 
     except Exception as e:
