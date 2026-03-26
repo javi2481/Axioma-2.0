@@ -47,10 +47,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <BrandProvider>
-            <Providers>
-              <TooltipProvider>
-                <AuthProvider>
+          <Providers>
+            <TooltipProvider>
+              <AuthProvider>
+                <BrandProvider>
                   <TaskProvider>
                     <KnowledgeFilterProvider>
                       <ChatProvider>
@@ -58,10 +58,10 @@ export default function RootLayout({
                       </ChatProvider>
                     </KnowledgeFilterProvider>
                   </TaskProvider>
-                </AuthProvider>
-              </TooltipProvider>
-            </Providers>
-          </BrandProvider>
+                </BrandProvider>
+              </AuthProvider>
+            </TooltipProvider>
+          </Providers>
         </ThemeProvider>
         <Toaster />
       </body>

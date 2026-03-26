@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { useAuth } from "@/contexts/auth-context";
 
 export type Brand = "oss" | "ibm";
 
@@ -24,12 +25,18 @@ function applyBrand(brand: Brand) {
 
 export function BrandProvider({ children }: { children: React.ReactNode }) {
   const [brand, setBrandState] = useState<Brand>("oss");
+  const { isIbmAuthMode } = useAuth();
 
   useEffect(() => {
-    const stored = (localStorage.getItem("brand") as Brand) ?? "oss";
-    applyBrand(stored);
-    setBrandState(stored);
-  }, []);
+    if (isIbmAuthMode) {
+      applyBrand("ibm");
+      setBrandState("ibm");
+    } else {
+      const stored = (localStorage.getItem("brand") as Brand) ?? "oss";
+      applyBrand(stored);
+      setBrandState(stored);
+    }
+  }, [isIbmAuthMode]);
 
   function setBrand(newBrand: Brand) {
     localStorage.setItem("brand", newBrand);
