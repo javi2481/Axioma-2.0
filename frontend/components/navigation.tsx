@@ -315,43 +315,58 @@ export function Navigation({
     <div className="flex flex-col h-full bg-background">
       <div className="px-4 py-2 flex-shrink-0">
         <div className="space-y-1">
-          {routes.map((route) => (
-            <div key={route.href}>
-              <Link
-                href={route.href}
-                className={cn(
-                  "text-[13px] group flex p-3 w-full justify-start font-medium cursor-pointer transition-all",
-                  isCloudBrand
-                    ? route.active
-                      ? "border-l-[3px] border-l-primary bg-[var(--layered-select-bg)] text-foreground rounded-r-lg"
-                      : "border-l-[3px] border-l-transparent text-foreground hover:bg-accent hover:text-accent-foreground rounded-lg"
-                    : cn(
-                        "hover:bg-accent hover:text-accent-foreground rounded-lg",
-                        route.active
-                          ? "bg-accent text-accent-foreground shadow-sm"
-                          : "text-foreground hover:text-accent-foreground",
-                      ),
+          {routes.map((route) => {
+            const isDisabled = loading && !route.active;
+            const tabClassName = cn(
+              "text-[13px] group flex p-3 w-full justify-start font-medium transition-all",
+              isDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
+              isCloudBrand
+                ? route.active
+                  ? "border-l-[3px] border-l-primary bg-[var(--layered-select-bg)] text-foreground rounded-r-lg"
+                  : cn(
+                      "border-l-[3px] border-l-transparent text-foreground rounded-lg",
+                      !isDisabled &&
+                        "hover:bg-accent hover:text-accent-foreground",
+                    )
+                : cn(
+                    "rounded-lg",
+                    route.active
+                      ? "bg-accent text-accent-foreground shadow-sm"
+                      : "text-foreground",
+                    !isDisabled &&
+                      "hover:bg-accent hover:text-accent-foreground",
+                  ),
+            );
+            const tabContent = (
+              <div className="flex items-center flex-1">
+                <route.icon
+                  className={cn(
+                    "h-[18px] w-[18px] mr-2 shrink-0",
+                    isCloudBrand
+                      ? "text-foreground"
+                      : route.active
+                        ? "text-muted-foreground"
+                        : "text-muted-foreground group-hover:text-muted-foreground",
+                  )}
+                />
+                {route.label}
+              </div>
+            );
+            return (
+              <div key={route.href}>
+                {isDisabled ? (
+                  <div className={tabClassName}>{tabContent}</div>
+                ) : (
+                  <Link href={route.href} className={tabClassName}>
+                    {tabContent}
+                  </Link>
                 )}
-              >
-                <div className="flex items-center flex-1">
-                  <route.icon
-                    className={cn(
-                      "h-[18px] w-[18px] mr-2 shrink-0",
-                      isCloudBrand
-                        ? "text-foreground"
-                        : route.active
-                          ? "text-muted-foreground"
-                          : "text-muted-foreground group-hover:text-muted-foreground",
-                    )}
-                  />
-                  {route.label}
-                </div>
-              </Link>
-              {route.label === "Settings" && (
-                <div className="my-2 border-t border-border" />
-              )}
-            </div>
-          ))}
+                {route.label === "Settings" && (
+                  <div className="my-2 border-t border-border" />
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 

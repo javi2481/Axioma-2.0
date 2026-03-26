@@ -7,6 +7,7 @@ import {
   type GetRowIdParams,
   themeQuartz,
   type ValueFormatterParams,
+  type ValueGetterParams,
 } from "ag-grid-community";
 import { AgGridReact, type CustomCellRendererProps } from "ag-grid-react";
 import { Cloud, FileIcon, Globe, RefreshCw } from "lucide-react";
@@ -31,6 +32,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useIsCloudBrand } from "@/contexts/brand-context";
+import {
+  buildKnowledgeTableRows,
+  getKnowledgeFileIdentity,
+} from "@/lib/knowledge-table-state";
 import { parseTimestampMs } from "@/lib/time-utils";
 import { cn } from "@/lib/utils";
 import {
@@ -197,10 +202,12 @@ function SearchPage() {
 
   const {
     data: searchData = [],
-    isFetching,
+    isLoading: isSearchLoading,
     error,
     isError,
-  } = useGetSearchQuery(queryOverride, parsedFilterData);
+  } = useGetSearchQuery(queryOverride, parsedFilterData, {
+    refetchInterval: 5000,
+  });
 
   const isOpenragDocsRow = useCallback((file?: File) => {
     return (
@@ -210,21 +217,50 @@ function SearchPage() {
   }, []);
 
   const getFileIdentity = useCallback((file?: File) => {
-    if (!file) {
+    return getKnowledgeFileIdentity(file);
+  }, []);
+
+  const getOwnerLabel = useCallback((file?: File): string => {
+    return file?.owner_name?.trim() || file?.owner_email?.trim() || "—";
+  }, []);
+
+  const normalizeSourceForSort = useCallback((value?: string): string => {
+    const trimmed = (value || "").trim();
+    if (!trimmed) {
       return "";
     }
 
-    const normalizedFilename = file.filename?.trim();
-    if (normalizedFilename) {
-      return normalizedFilename;
+    try {
+      const parsed = new URL(trimmed);
+      const hostname = parsed.hostname.toLowerCase();
+      const pathname = parsed.pathname.replace(/\/+$/, "").toLowerCase();
+      return `${hostname}${pathname}`;
+    } catch {
+      return trimmed
+        .toLowerCase()
+        .replace(/^https?:\/\//, "")
+        .split(/[?#]/)[0]
+        .replace(/\/+$/, "");
     }
+  }, []);
 
-    const normalizedSourceUrl = file.source_url?.trim();
-    if (normalizedSourceUrl) {
-      return normalizedSourceUrl;
+  const getStatusSortRank = useCallback((status?: File["status"]): number => {
+    switch (status) {
+      case "active":
+        return 0;
+      case "processing":
+        return 1;
+      case "sync":
+        return 2;
+      case "failed":
+        return 3;
+      case "unavailable":
+        return 4;
+      case "hidden":
+        return 5;
+      default:
+        return 0;
     }
-
-    return "";
   }, []);
 
   const hasOpenragRefreshCueFromTasks = tasks.some((task) => {
@@ -264,68 +300,11 @@ function SearchPage() {
       lastErrorRef.current = null;
     }
   }, [isError, error]);
-  // Convert TaskFiles to File format and merge with backend results
-  const taskFilesAsFiles: File[] = taskFiles.map((taskFile) => {
-    const normalizedFilename =
-      taskFile.filename?.trim() ||
-      taskFile.source_url?.trim() ||
-      "Untitled source";
-
-    return {
-      filename: normalizedFilename,
-      mimetype: taskFile.mimetype,
-      source_url: taskFile.source_url || "",
-      size: taskFile.size,
-      connector_type: taskFile.connector_type,
-      status: taskFile.status,
-      error: taskFile.error,
-      embedding_model: taskFile.embedding_model,
-      embedding_dimensions: taskFile.embedding_dimensions,
-    };
-  });
-  // Create a map of task files by filename for quick lookup
-  const taskFileMap = new Map(
-    taskFilesAsFiles.map((file) => [getFileIdentity(file), file]),
+  const fileResults = buildKnowledgeTableRows(
+    searchData as File[],
+    taskFiles,
+    !!parsedFilterData,
   );
-  // Override backend files with task file status if they exist.
-  // Keep openrag_docs rows sourced from indexed search results so
-  // OpenRAG docs do not appear as pending in the table.
-  const backendFiles = (searchData as File[]).map((file) => {
-    if (file.connector_type === "openrag_docs") {
-      return file;
-    }
-    const taskFile = taskFileMap.get(getFileIdentity(file));
-    if (taskFile) {
-      // Override backend file with task file data (includes status)
-      return { ...file, ...taskFile };
-    }
-    return file;
-  });
-
-  const filteredTaskFiles = taskFilesAsFiles.filter((taskFile) => {
-    // Ignore the synthetic refresh task row from docs URL ingestion.
-    // The table should only show indexed docs, not orchestration task labels.
-    if (
-      taskFile.filename === "OpenRAG docs refresh" ||
-      taskFile.source_url.includes("openr.ag")
-    ) {
-      return false;
-    }
-    // Do not render task-only openrag_docs placeholder rows in the table.
-    // OpenRAG default docs should be represented only by indexed search results.
-    if (taskFile.connector_type === "openrag_docs") {
-      return false;
-    }
-    return (
-      taskFile.status !== "active" &&
-      !backendFiles.some(
-        (backendFile) =>
-          getFileIdentity(backendFile) === getFileIdentity(taskFile),
-      )
-    );
-  });
-  // Combine task files first, then backend files
-  const fileResults = [...backendFiles, ...filteredTaskFiles];
 
   const gridRows = fileResults;
   const gridRef = useRef<AgGridReact>(null);
@@ -334,6 +313,20 @@ function SearchPage() {
     {
       field: "filename",
       headerName: "Source",
+      sortable: true,
+      comparator: (valueA?: string, valueB?: string) => {
+        const sourceA = normalizeSourceForSort(valueA);
+        const sourceB = normalizeSourceForSort(valueB);
+        if (sourceA === sourceB) {
+          const fallbackA = (valueA || "").trim().toLowerCase();
+          const fallbackB = (valueB || "").trim().toLowerCase();
+          if (fallbackA === fallbackB) {
+            return 0;
+          }
+          return fallbackA < fallbackB ? -1 : 1;
+        }
+        return sourceA < sourceB ? -1 : 1;
+      },
       checkboxSelection: (params: CheckboxSelectionCallbackParams<File>) =>
         (params?.data?.status || "active") === "active",
       headerCheckboxSelection: true,
@@ -398,6 +391,9 @@ function SearchPage() {
       field: "size",
       headerName: "Size",
       ...(isCloudBrand ? { flex: 1, minWidth: 110 } : {}),
+      sortable: true,
+      comparator: (valueA?: number, valueB?: number) =>
+        (valueA || 0) - (valueB || 0),
       valueFormatter: (params: ValueFormatterParams<File>) =>
         params.value ? `${Math.round(params.value / 1024)} KB` : "-",
       cellClass: isCloudBrand ? "text-muted-foreground" : undefined,
@@ -407,6 +403,7 @@ function SearchPage() {
       headerName: "Type",
       ...(isCloudBrand ? { flex: 1, minWidth: 110 } : {}),
       cellClass: isCloudBrand ? "text-muted-foreground" : undefined,
+      sortable: true,
     },
     {
       field: "owner",
@@ -415,11 +412,21 @@ function SearchPage() {
       valueFormatter: (params: ValueFormatterParams<File>) =>
         params.data?.owner_name || params.data?.owner_email || "—",
       cellClass: isCloudBrand ? "text-muted-foreground" : undefined,
+      sortable: true,
+      valueGetter: (params: ValueGetterParams<File>) =>
+        getOwnerLabel(params.data),
+      comparator: (valueA?: string, valueB?: string) =>
+        (valueA || "—").localeCompare(valueB || "—", undefined, {
+          sensitivity: "base",
+        }),
     },
     {
       field: "chunkCount",
       headerName: "Chunks",
       ...(isCloudBrand ? { flex: 0.9, minWidth: 95 } : {}),
+      sortable: true,
+      comparator: (valueA?: number, valueB?: number) =>
+        (valueA || 0) - (valueB || 0),
       valueFormatter: (params: ValueFormatterParams<File>) =>
         params.data?.chunkCount?.toString() || "-",
       cellClass: isCloudBrand ? "text-muted-foreground" : undefined,
@@ -428,6 +435,9 @@ function SearchPage() {
       field: "avgScore",
       headerName: "Avg score",
       ...(isCloudBrand ? { flex: 1, minWidth: 120 } : {}),
+      sortable: true,
+      comparator: (valueA?: number, valueB?: number) =>
+        (valueA || 0) - (valueB || 0),
       cellRenderer: ({ value }: CustomCellRendererProps<File>) => {
         if (isCloudBrand) {
           return (
@@ -447,6 +457,7 @@ function SearchPage() {
       field: "embedding_model",
       headerName: "Embedding model",
       ...(isCloudBrand ? { flex: 1.4 } : {}),
+      sortable: true,
       minWidth: 200,
       cellRenderer: ({ data }: CustomCellRendererProps<File>) => (
         <span className="text-xs text-muted-foreground">
@@ -458,6 +469,9 @@ function SearchPage() {
       field: "embedding_dimensions",
       headerName: "Dimensions",
       ...(isCloudBrand ? { flex: 0.9, minWidth: 110 } : { width: 110 }),
+      sortable: true,
+      comparator: (valueA?: number, valueB?: number) =>
+        (valueA || 0) - (valueB || 0),
       cellRenderer: ({ data }: CustomCellRendererProps<File>) => (
         <span className="text-xs text-muted-foreground">
           {typeof data?.embedding_dimensions === "number"
@@ -470,6 +484,11 @@ function SearchPage() {
       field: "status",
       headerName: "Status",
       ...(isCloudBrand ? { flex: 1, minWidth: 130 } : {}),
+      sortable: true,
+      valueGetter: (params: ValueGetterParams<File>) =>
+        params.data?.status || "active",
+      comparator: (valueA?: File["status"], valueB?: File["status"]) =>
+        getStatusSortRank(valueA) - getStatusSortRank(valueB),
       cellRenderer: ({ data }: CustomCellRendererProps<File>) => {
         const status = data?.status || "active";
         const showOpenragRefreshCue =
@@ -618,6 +637,7 @@ function SearchPage() {
           ? error.message
           : "Failed to delete some documents",
       );
+      setShowBulkDeleteDialog(false);
     }
   };
 
@@ -740,7 +760,7 @@ function SearchPage() {
             className="w-full overflow-auto border"
             columnDefs={columnDefs as ColDef<File>[]}
             defaultColDef={defaultColDef}
-            loading={isFetching}
+            loading={isSearchLoading || deleteDocumentMutation.isPending}
             ref={gridRef}
             theme={themeQuartz.withParams({ browserColorScheme: "inherit" })}
             rowData={gridRows}
@@ -771,7 +791,7 @@ function SearchPage() {
             className="w-full overflow-auto"
             columnDefs={columnDefs as ColDef<File>[]}
             defaultColDef={defaultColDef}
-            loading={isFetching}
+            loading={isSearchLoading || deleteDocumentMutation.isPending}
             ref={gridRef}
             theme={themeQuartz.withParams({ browserColorScheme: "inherit" })}
             rowData={gridRows}
