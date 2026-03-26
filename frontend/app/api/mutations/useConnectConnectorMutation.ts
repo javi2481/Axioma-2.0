@@ -5,7 +5,6 @@ import type { Connector } from "../queries/useGetConnectorsQuery";
 
 interface ConnectResponse {
   connection_id: string;
-  public_return_url?: string;
   oauth_config?: {
     authorization_endpoint: string;
     client_id: string;
@@ -70,7 +69,7 @@ export const useConnectConnectorMutation = () => {
         localStorage.setItem("connecting_connector_type", connector.type);
         localStorage.setItem("auth_purpose", "data_source");
 
-        const returnUrl = result.public_return_url || window.location.origin;
+        const returnUrl = `${window.location.origin}/auth/callback`;
         const stateQuery = `id=${result.connection_id}&return=${returnUrl}`;
         const state = encodeBase64(stateQuery);
 

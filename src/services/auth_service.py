@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 import asyncio
 import os
-from config.settings import WEBHOOK_BASE_URL, is_no_auth_mode
+from config.settings import BROKER_URL, WEBHOOK_BASE_URL, is_no_auth_mode
 from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
@@ -88,11 +88,12 @@ class AuthService:
 
         # Create connection configuration - use data/ directory for persistence
         token_file = f"data/{connector_type}_{purpose}_{uuid.uuid4().hex[:8]}.json"
+        effective_redirect_uri = BROKER_URL or redirect_uri
         config = {
             "token_file": token_file,
             "connector_type": connector_type,
             "purpose": purpose,
-            "redirect_uri": redirect_uri,
+            "redirect_uri": effective_redirect_uri,
         }
 
         # Only add webhook URL if WEBHOOK_BASE_URL is configured
@@ -165,11 +166,10 @@ class AuthService:
             "oauth_config": {
                 "client_id": client_id,
                 "scopes": scopes,
-                "redirect_uri": redirect_uri,
+                "redirect_uri": effective_redirect_uri,
                 "authorization_endpoint": auth_endpoint,
                 "token_endpoint": token_endpoint,
             },
-            "public_return_url": os.getenv("PUBLIC_RETURN_URL"),
         }
 
     async def _init_direct_connection(
@@ -233,6 +233,7 @@ class AuthService:
         request=None,
     ) -> dict:
         """Handle OAuth callback - exchange authorization code for tokens"""
+        logger.info(f"OAuth callback state: {state}")
         if not all([connection_id, authorization_code]):
             raise ValueError(
                 "Missing required parameters (connection_id, authorization_code)"

@@ -151,9 +151,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
             ),
           });
 
-          const returnUrl = result.public_return_url || window.location.origin;
+          const returnUrl = `${window.location.origin}/auth/callback`;
           const stateQuery = `id=${result.connection_id}&return=${returnUrl}`;
           const state = encodeBase64(stateQuery);
+
+          console.log("OAuth state (encoded):", state, "decoded:", stateQuery);
 
           const authUrl =
             `${result.oauth_config.authorization_endpoint}?` +

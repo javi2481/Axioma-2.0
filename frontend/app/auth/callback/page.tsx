@@ -41,6 +41,8 @@ function AuthCallbackContent() {
         const state = searchParams.get("state");
         const errorParam = searchParams.get("error");
 
+        console.log("OAuth callback state (raw):", state);
+
         // Get stored auth info
         const connectorId = localStorage.getItem("connecting_connector_id");
         const storedConnectorType = localStorage.getItem(
@@ -89,6 +91,7 @@ function AuthCallbackContent() {
           try {
             // The entire state is now Base64 encoded: id=<connection_id>&return=<return_url>
             const decodedState = decodeBase64(stateParam);
+            console.log("OAuth callback state (decoded):", decodedState);
             const params = new URLSearchParams(decodedState);
 
             if (params.has("id")) {

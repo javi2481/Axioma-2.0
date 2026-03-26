@@ -110,8 +110,10 @@ WEBHOOK_BASE_URL = os.getenv(
     "WEBHOOK_BASE_URL"
 )  # No default - must be explicitly configured
 
-# Public return URL for OAuth flows (Broker redirect)
-PUBLIC_RETURN_URL = os.getenv("PUBLIC_RETURN_URL")
+# OAuth callback broker URL -- when set, Google (and other providers) redirect
+# here instead of directly to the frontend.  The broker then forwards to the
+# actual frontend origin that is carried in the OAuth state parameter.
+BROKER_URL = os.getenv("BROKER_URL")
 
 # OpenSearch configuration
 VECTOR_DIM = 1536
