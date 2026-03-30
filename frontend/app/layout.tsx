@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Chivo, Inter, JetBrains_Mono } from "next/font/google";
+import { Chivo, IBM_Plex_Sans, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { LayoutWrapper } from "@/components/layout-wrapper";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -27,6 +27,12 @@ const chivo = Chivo({
   subsets: ["latin"],
 });
 
+const ibmPlexSans = IBM_Plex_Sans({
+  variable: "--font-ibm-plex-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
 export const metadata: Metadata = {
   title: "OpenRAG",
   description: "Open source RAG (Retrieval Augmented Generation) system",
@@ -39,7 +45,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${jetbrainsMono.variable} ${chivo.variable} antialiased overflow-hidden bg-white dark:bg-black`}
+        className={`${inter.variable} ${jetbrainsMono.variable} ${chivo.variable} ${ibmPlexSans.variable} antialiased overflow-hidden bg-white dark:bg-black`}
       >
         <ThemeProvider
           attribute="class"

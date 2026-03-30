@@ -198,6 +198,7 @@ const config = {
         sans: ["var(--font-sans)", ...fontFamily.sans],
         mono: ["var(--font-mono)", ...fontFamily.mono],
         chivo: ["var(--font-chivo)", ...fontFamily.sans],
+        "ibm-plex-sans": ["var(--font-ibm-plex-sans)", ...fontFamily.sans],
       },
       fontSize: {
         xxs: "11px",

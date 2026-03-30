@@ -9,7 +9,6 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { IBM_Plex_Sans } from "next/font/google";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -64,12 +63,6 @@ import ModelProviders from "./_components/model-providers";
 import { getModelLogo, type ModelProvider } from "./_helpers/model-helpers";
 
 const { MAX_SYSTEM_PROMPT_CHARS } = UI_CONSTANTS;
-
-const ibmSettingsFont = IBM_Plex_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 function KnowledgeSourcesPage() {
   const isCloudBrand = useIsCloudBrand();
@@ -568,7 +561,7 @@ function KnowledgeSourcesPage() {
     <div
       className={cn(
         "space-y-8 pb-6",
-        isCloudBrand && ibmSettingsFont.className,
+        isCloudBrand && "font-ibm-plex-sans",
         isCloudBrand && "ibm-settings-page",
       )}
     >

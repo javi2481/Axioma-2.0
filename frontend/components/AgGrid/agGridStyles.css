@@ -20,7 +20,7 @@ body {
 
   .ag-header {
     border-bottom: 1px solid hsl(var(--border));
-    margin-bottom: 0;
+    margin-bottom: 0.5rem;
   }
 
   /* Make sure checkboxes are visible */
@@ -73,6 +73,7 @@ body {
   .ag-header {
     background-color: #e0e0e0 !important;
     border-bottom: 1px solid hsl(var(--border));
+    margin-bottom: 0;
   }
 
   .ag-header-row {

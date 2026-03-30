@@ -2,7 +2,6 @@ import { GitBranch } from "lucide-react";
 import { motion } from "motion/react";
 import DogIcon from "@/components/icons/dog-icon";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
-import { useIsCloudBrand } from "@/contexts/brand-context";
 import { cn } from "@/lib/utils";
 import type {
   FunctionCall,
@@ -45,8 +44,6 @@ export function AssistantMessage({
   isInitialGreeting = false,
   usage,
 }: AssistantMessageProps) {
-  const isCloudBrand = useIsCloudBrand();
-
   return (
     <motion.div
       initial={animate ? { opacity: 0, y: -20 } : { opacity: 1, y: 0 }}
@@ -85,11 +82,6 @@ export function AssistantMessage({
               <DogIcon
                 className="h-6 w-6 transition-colors duration-300"
                 disabled={isCompleted || isInactive}
-                disabledFill={
-                  isCloudBrand && (isCompleted || isInactive)
-                    ? "#525252"
-                    : undefined
-                }
               />
             </motion.div>
           </div>

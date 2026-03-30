@@ -49,11 +49,12 @@ export function Header() {
           {/* <DiscordLink inviteCode="EqksyE2EX9" /> */}
 
           {process.env.NEXT_PUBLIC_IBM_THEME_DEV === "true" && (
-            <BrandSwitcher />
+            <>
+              <BrandSwitcher />
+              {/* Separator */}
+              <div className="w-px h-6 bg-border mx-3" />
+            </>
           )}
-
-          {/* Separator */}
-          <div className="w-px h-6 bg-border mx-3" />
 
           {/* Task Notification Bell */}
           <button
