@@ -55,6 +55,7 @@ import {
   DEFAULT_KNOWLEDGE_SETTINGS,
   UI_CONSTANTS,
 } from "@/lib/constants";
+import { deriveCloudLangflowUrl } from "@/lib/url-utils";
 import { cn } from "@/lib/utils";
 import { useUpdateSettingsMutation } from "../api/mutations/useUpdateSettingsMutation";
 import { ModelSelector } from "../onboarding/_components/model-selector";
@@ -72,7 +73,7 @@ const ibmSettingsFont = IBM_Plex_Sans({
 
 function KnowledgeSourcesPage() {
   const isCloudBrand = useIsCloudBrand();
-  const { isAuthenticated, isNoAuthMode } = useAuth();
+  const { isAuthenticated, isNoAuthMode, isIbmAuthMode } = useAuth();
   const { addTask, tasks } = useTask();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -493,11 +494,16 @@ function KnowledgeSourcesPage() {
         ? settings.langflow_ingest_edit_url
         : settings.langflow_edit_url;
 
+    const cloudLangflowUrl =
+      isIbmAuthMode && typeof window !== "undefined"
+        ? deriveCloudLangflowUrl(window.location.origin)
+        : null;
     const derivedFromWindow =
       typeof window !== "undefined"
         ? `${window.location.protocol}//${window.location.hostname}:7860`
         : "";
     const base = (
+      cloudLangflowUrl ||
       settings.langflow_public_url ||
       derivedFromWindow ||
       "http://localhost:7860"
