@@ -1506,7 +1506,7 @@ async def create_app():
     """Create and configure the FastAPI application"""
     services = await initialize_services()
 
-    app = FastAPI(title="OpenRAG API", version=OPENRAG_VERSION, debug=True)
+    app = FastAPI(title="OpenRAG API", version=OPENRAG_VERSION, debug=os.getenv("DEBUG", "false").lower() == "true")
     app.state.services = services  # Store services for cleanup
     app.state.background_tasks = set()
     
