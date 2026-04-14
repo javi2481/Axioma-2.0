@@ -272,6 +272,7 @@
 | 2026-04-13 | Creado spec para api-rate-limiting |
 | 2026-04-13 | Propuesta y spec guardados en Engram |
 | 2026-04-13 | Spec creado: docs/specs/api-rate-limiting.md |
+| 2026-04-13 | Diseño creado: docs/specs/api-rate-limiting-design.md |
 
 ---
 
