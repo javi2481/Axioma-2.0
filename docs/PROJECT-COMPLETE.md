@@ -304,13 +304,13 @@ Store primario: Redis. Fallback automático a memoria si Redis no está disponib
 
 ## 8. Roadmap 2026
 
-### Q1: Foundations (Ahora)
+### Q1: Foundations ✅ COMPLETO
 
 ```
 [x]    Review técnico final
 [x]    Rate Limiting ← COMPLETADO 2026-04-14
-[ ]    Documentar API MCP para clientes
-[ ]    Pulir docstrings + Swagger
+[x]    Documentar API MCP para clientes ← COMPLETADO 2026-04-14
+[x]    Pulir docstrings + Swagger ← COMPLETADO 2026-04-14
 ```
 
 ### Q2: Enterprise B2B

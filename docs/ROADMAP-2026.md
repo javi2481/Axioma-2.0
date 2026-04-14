@@ -185,8 +185,8 @@
 ```
 [x]    Review técnico final
 [x]    Rate Limiting ← COMPLETADO 2026-04-14
-[ ]    Documentar API MCP para clientes
-[ ]    Pulir docstrings + Swagger
+[x]    Documentar API MCP para clientes ← COMPLETADO 2026-04-14
+[x]    Pulir docstrings + Swagger ← COMPLETADO 2026-04-14
 ```
 
 **Responsable:** Backend Team  
@@ -194,8 +194,8 @@
 - ✅ Middleware de rate limiting (Redis + Starlette + fallback en memoria)
 - ✅ Tests unitarios completos (13 tests)
 - ✅ Redis en docker-compose con healthcheck
-- Documentación técnica para clientes
-- OpenAPI spec pulida
+- ✅ `docs/MCP-GUIDE.md` — guía para conectar Cursor y Claude Desktop via MCP
+- ✅ Swagger: título "Axioma API", descripción, tags, summaries en los 16 endpoints públicos
 
 ---
 
@@ -325,6 +325,10 @@
 | 2026-04-14 | Rate Limiting implementado: middleware, servicio Redis, 13 tests unitarios |
 | 2026-04-14 | Redis agregado a docker-compose y pyproject.toml |
 | 2026-04-14 | Tests pre-existentes corregidos (encryption, opensearch_security_setup) |
+| 2026-04-14 | Langfuse marcado como configurado y activo |
+| 2026-04-14 | docs/MCP-GUIDE.md: guía completa para conectar Cursor y Claude Desktop via MCP |
+| 2026-04-14 | Swagger: título "Axioma API", descripción, openapi_tags y summaries en 16 endpoints públicos |
+| 2026-04-14 | Q1 2026 completado al 100% |
 
 ---
 

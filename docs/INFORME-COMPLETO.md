@@ -229,8 +229,8 @@ En términos simples: **Es un motor de búsqueda inteligente con IA que permite 
 ### Q1: Foundations (Ahora)
 - [x] Review técnico
 - [x] Rate Limiting ← **COMPLETADO 2026-04-14**
-- [ ] Documentar MCP para clientes
-- [ ] Pulir Swagger
+- [x] Documentar MCP para clientes ← **COMPLETADO 2026-04-14**
+- [x] Pulir Swagger ← **COMPLETADO 2026-04-14**
 
 ### Q2: Enterprise B2B (Configuración)
 - [ ] SSO/SAML ← Config OpenSearch
