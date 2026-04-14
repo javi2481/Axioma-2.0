@@ -165,10 +165,10 @@
 
 | # | Feature | Estado | Descripción |
 |---|---------|--------|-------------|
-| 4 | SSO/SAML Enterprise | ❌ | Para clientes que requieren IdP corporativo |
-| 5 | Audit Logs | ⚠️ | OpenSearch tiene audit, falta dashboard |
-| 6 | Permisos Granulares (DLS/FLS) | ⚠️ | Configurar Document/Field Level Security |
-| 7 | White-label / Theming | ❌ | Fork + personalización frontend |
+| 4 | SSO/SAML Enterprise | ⚠️ Config | OpenSearch Security nativo |
+| 5 | Audit Logs | ⚠️ Config | OpenSearch Audit Logs nativo |
+| 6 | Permisos Granulares (DLS/FLS) | ⚠️ Config | OpenSearch DLS/FLS nativo |
+| 7 | White-label / Theming | 🔴 Código | Frontend Vercel v0 |
 
 ### 🟢 PRIORIDAD BAJA (Q3-Q4 2026)
 
@@ -205,21 +205,18 @@
 
 ---
 
-### Q2 2026: Enterprise B2B
+### Q2 2026: Enterprise B2B (Configuración OpenSearch)
 
 ```
-[ ]    SSO/SAML setup (Auth0/Keycloak bridge)
-[ ]    OpenSearch Audit Logs configuration
-[ ]    DLS/FLS granular permissions
-[ ]    White-label base (theming)
+[~]    Rate Limiting ← PRIORIDAD #1 (código)
+[ ]    SSO/SAML ← Config OpenSearch Security
+[ ]    Audit Logs ← Config OpenSearch Audit
+[ ]    DLS/FLS ← Config OpenSearch Security
+[ ]    White-label ← Código Vercel v0
 ```
 
 **Responsable:** DevOps + Backend  
-**Entregables:**
-- SSO con IdP corporativos
-- Dashboard de auditoría
-- Control de acceso granular
-- Tema custom para frontend
+**Nota:** SSO, Audit y DLS/FLS se configuran en OpenSearch, no requieren código Python.
 
 ---
 

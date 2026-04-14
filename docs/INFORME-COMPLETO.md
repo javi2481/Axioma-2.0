@@ -1,7 +1,26 @@
 # Informe Completo: Axioma 2.0
 
 > Proyecto RAG empresarial basado en OpenRAG (langflow-ai/openrag)
+> **Descubrimiento clave: El 90% ya está resuelto. Solo 10% requiere código.**
 > Última actualización: 2026-04-13
+
+---
+
+## TL;DR: Lo que SÍ hay que hacer
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     AXIOMA 2.0                                  │
+├─────────────────────────────────────────────────────────────────┤
+│  ✅ CONFIGURACIÓN (90%)          │  💻 CÓDIGO (10%)           │
+│  ─────────────────────           │  ─────────────            │
+│  • SSO/SAML (OpenSearch)         │  • Rate Limiting           │
+│  • DLS/FLS (OpenSearch)          │  • White-label (frontend)  │
+│  • Audit Logs (OpenSearch)        │                            │
+│  • Multi-language (.env)         │                            │
+│  • APIs, Conectores, Auth, etc   │                            │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -122,32 +141,25 @@ En términos simples: **Es un motor de búsqueda inteligente con IA que permite 
 
 ---
 
-## 5. Lo que falta (10%)
+## 5. Lo que falta (CORREGIDO)
 
-### Prioridad Alta
-| Feature | Estado | Descripción |
-|---------|--------|-------------|
-| **Rate Limiting** | 🔄 En Progreso | Control de requests por API key |
+> ⚠️ IMPORTANTE: Revisando el análisis original, varias features marcadas como "faltante" en realidad YA ESTÁN RESUELTAS por el ecosistema subyacente (OpenSearch, Granite). No necesitas código — solo configuración.
 
-**Por qué es importante:** Sin Rate Limiting, un cliente puede:
-- Gastar todos tus tokens de LLM
-- Saturar tu OpenSearch
-- Generarte facturas enormes
+### Lo que SÍ hay que codificar (Tus verdaderos gaps)
 
-### Prioridad Media
-| Feature | Estado |
-|---------|--------|
-| SSO/SAML Enterprise | ❌ |
-| Audit Logs | ⚠️ |
-| DLS/FLS permisos | ⚠️ |
-| White-label | ❌ |
+| Feature | Estado | Cómo resolverlo |
+|---------|--------|-----------------|
+| **Rate Limiting** | 🔴 Por implementar | Código: Redis + Middleware (ya documentado) |
+| **White-label** | 🔴 Por implementar | Frontend: Vercel v0 + Next.js |
 
-### Prioridad Baja
-| Feature | Estado |
-|---------|--------|
-| Redis Cache | ❌ |
-| Multi-language | ⚠️ |
-| Rate Plans | ❌ |
+### Lo que parece "faltar" pero ya está resuelto (solo configuración)
+
+| Feature | Estado | Cómo resolverlo |
+|---------|--------|-----------------|
+| **SSO/SAML Enterprise** | ⚠️ Config | OpenSearch Security: SAML, OIDC, AD, LDAP nativos |
+| **Permisos Granulares (DLS/FLS)** | ⚠️ Config | OpenSearch DLS/FLS nativos — sin Python |
+| **Audit Logs** | ⚠️ Config | OpenSearch Audit Logs nativos — activar en config |
+| **Multi-language** | ⚠️ Config | granite-embedding-278m-multilingual (12 idiomas) |
 
 ---
 
@@ -185,25 +197,47 @@ En términos simples: **Es un motor de búsqueda inteligente con IA que permite 
 
 ---
 
-## 7. El Futuro ( Roadmap 2026)
+## 7. Lo que SÍ hay que codificar
+
+> Resumen corregido: Solo 2 cosas necesitan código. El resto es configuración.
+
+### Código (Desarrollo)
+
+| Feature | Estado | Descripción |
+|---------|--------|-------------|
+| **Rate Limiting** | 🔄 Por implementar | Redis + Starlette middleware |
+| **White-label** | 🔴 Por implementar | Frontend con Vercel v0 |
+
+### Configuración (No requiere código)
+
+| Feature | Estado | Descripción |
+|---------|--------|-------------|
+| SSO/SAML | ⚠️ Config | OpenSearch native (SAML, OIDC, AD, LDAP) |
+| DLS/FLS | ⚠️ Config | OpenSearch Document/Field Level Security |
+| Audit Logs | ⚠️ Config | OpenSearch Audit Logs (activar) |
+| Multi-language | ⚠️ Config | granite-embedding-278m-multilingual |
+
+---
+
+## 8. El Futuro ( Roadmap 2026)
 
 ### Q1: Foundations (Ahora)
 - [x] Review técnico
-- [~] Rate Limiting ← **En proceso**
+- [~] Rate Limiting ← **Código por implementar**
 - [ ] Documentar MCP para clientes
 - [ ] Pulir Swagger
 
-### Q2: Enterprise B2B
-- [ ] SSO/SAML
-- [ ] Audit Logs
-- [ ] Permisos granulares
-- [ ] White-label
+### Q2: Enterprise B2B (Configuración)
+- [ ] SSO/SAML ← Config OpenSearch
+- [ ] Audit Logs ← Config OpenSearch
+- [ ] DLS/FLS ← Config OpenSearch
+- [ ] White-label ← Código Vercel v0
 
 ### Q3: Scale B2C
-- [ ] Redis Cache
-- [ ] Rate Plans (Free/Pro/Enterprise)
-- [ ] Analytics Dashboard
-- [ ] Multi-language
+- [ ] Redis Cache (opcional)
+- [ ] Rate Plans
+- [ ] Analytics Dashboard (config Langfuse)
+- [ ] Multi-language (config Granite)
 
 ### Q4: Launch
 - [ ] Performance
@@ -213,7 +247,7 @@ En términos simples: **Es un motor de búsqueda inteligente con IA que permite 
 
 ---
 
-## 8. Métricas Objetivo 2026
+## 12. Métricas Objetivo 2026
 
 | Métrica | Target |
 |---------|--------|
@@ -225,7 +259,7 @@ En términos simples: **Es un motor de búsqueda inteligente con IA que permite 
 
 ---
 
-## 9. Cómo empezar
+## 13. Cómo empezar
 
 ### Para desarrollo
 ```bash
@@ -252,7 +286,7 @@ make dev
 
 ---
 
-## 10. Diferenciadores
+## 14. Diferenciadores
 
 | Aspecto | Axioma 2.0 |
 |---------|------------|
@@ -265,17 +299,28 @@ make dev
 
 ---
 
-## 11. Estado Actual
+## 15. Estado Actual (CORREGIDO)
 
 ```
-███░░░░░░░░░░░░░░░░░░░░░░░░░  85% B2C Listo
-███████░░░░░░░░░░░░░░░░░░░░░  60% B2B Listo
+████████████░░░░░░░░░░░░░░░  90% Resuelto (configuración)
+███░░░░░░░░░░░░░░░░░░░░░░░░░  10% Por hacer (código)
 ```
 
-**Falta:**
-- Rate Limiting (código por implementar)
-- SSO/SAML (para enterprise)
-- White-label (para comercializar)
+### Lo que SÍ requiere código
+
+| Feature | Prioridad | Estado |
+|---------|-----------|--------|
+| **Rate Limiting** | Alta | 🔄 Por implementar |
+| **White-label** | Alta | 🔴 Por implementar |
+
+### Lo que es configuración (NO código)
+
+| Feature | Estado | Responsable |
+|---------|--------|-------------|
+| SSO/SAML | ⚠️ Config | OpenSearch |
+| DLS/FLS | ⚠️ Config | OpenSearch |
+| Audit Logs | ⚠️ Config | OpenSearch |
+| Multi-language | ⚠️ Config | .env (Granite) |
 
 ---
 
