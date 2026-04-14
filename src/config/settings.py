@@ -65,6 +65,11 @@ RATE_LIMITS = {
     "enterprise": None,  # unlimited
 }
 
+# Semantic cache (LangCache)
+LANGCACHE_ENABLED = os.getenv("LANGCACHE_ENABLED", "true").lower() in ("true", "1", "yes")
+LANGCACHE_SIMILARITY_THRESHOLD = float(os.getenv("LANGCACHE_SIMILARITY_THRESHOLD", "0.95"))
+LANGCACHE_TTL = get_env_int("LANGCACHE_TTL", 3600)  # segundos
+
 # IBM AMS authentication (Watsonx Data embedded mode)
 IBM_AUTH_ENABLED = os.getenv("IBM_AUTH_ENABLED", "false").lower() in ("true", "1", "yes")
 IBM_JWT_PUBLIC_KEY_URL = os.getenv("IBM_JWT_PUBLIC_KEY_URL", "")
@@ -145,7 +150,7 @@ OPENAI_EMBEDDING_DIMENSIONS = {
 WATSONX_EMBEDDING_DIMENSIONS = {
 # IBM Models
 "ibm/granite-embedding-107m-multilingual": 384,
-"ibm/granite-embedding-278m-multilingual": 1024,
+"ibm/granite-embedding-278m-multilingual": 768,
 "ibm/slate-125m-english-rtrvr": 768,
 "ibm/slate-125m-english-rtrvr-v2": 768,
 "ibm/slate-30m-english-rtrvr": 384,

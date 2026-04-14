@@ -1393,7 +1393,7 @@ async def startup_tasks(services):
         # Don't fail startup if this check fails
 
 
-async def initialize_services():
+async def initialize_services(semantic_cache=None):
     """Initialize all services and their dependencies"""
     await TelemetryClient.send_event(
         Category.SERVICE_INITIALIZATION, MessageId.ORB_SVC_INIT_START
@@ -1424,7 +1424,7 @@ async def initialize_services():
     search_service = SearchService(session_manager)
     task_service = TaskService(document_service, ingestion_timeout=INGESTION_TIMEOUT)
     flows_service = FlowsService()
-    chat_service = ChatService(flows_service=flows_service)
+    chat_service = ChatService(flows_service=flows_service, semantic_cache=semantic_cache)
     knowledge_filter_service = KnowledgeFilterService(session_manager)
     models_service = ModelsService()
     monitor_service = MonitorService(session_manager)
@@ -1507,9 +1507,21 @@ async def create_app():
     """Create and configure the FastAPI application"""
     from services.rate_limiter import RateLimiter
     from rate_limit_middleware import RateLimitMiddleware
-    from config.settings import REDIS_URL
+    from services.semantic_cache import SemanticCache
+    from config.settings import (
+        REDIS_URL,
+        LANGCACHE_ENABLED,
+        LANGCACHE_SIMILARITY_THRESHOLD,
+        LANGCACHE_TTL,
+    )
 
-    services = await initialize_services()
+    semantic_cache = (
+        SemanticCache(REDIS_URL, LANGCACHE_SIMILARITY_THRESHOLD, LANGCACHE_TTL)
+        if LANGCACHE_ENABLED
+        else None
+    )
+
+    services = await initialize_services(semantic_cache=semantic_cache)
 
     app = FastAPI(
         title="Axioma API",

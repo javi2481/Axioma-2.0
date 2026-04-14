@@ -8,8 +8,9 @@ logger = get_logger(__name__)
 
 
 class ChatService:
-    def __init__(self, flows_service=None):
+    def __init__(self, flows_service=None, semantic_cache=None):
         self.flows_service = flows_service
+        self.semantic_cache = semantic_cache
 
     async def chat(
         self,
@@ -137,6 +138,13 @@ class ChatService:
             filter_expression
         )
         logger.info(f"[LF] Extra headers {extra_headers}")
+
+        # Semantic cache check — only for non-streaming requests
+        if not stream and self.semantic_cache is not None:
+            cached = await self.semantic_cache.get(prompt)
+            if cached is not None:
+                return {"response": cached, "cached": True}
+
         # Ensure the Langflow client exists; try lazy init if needed
         langflow_client = await clients.ensure_langflow_client()
         if not langflow_client:
@@ -169,6 +177,11 @@ class ChatService:
                 previous_response_id=previous_response_id,
                 filter_id=filter_id,
             )
+
+            # Store in semantic cache for future similar queries
+            if self.semantic_cache is not None and response_text:
+                await self.semantic_cache.set(prompt, response_text)
+
             response_data = {"response": response_text}
             if response_id:
                 response_data["response_id"] = response_id

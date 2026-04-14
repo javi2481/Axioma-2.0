@@ -95,7 +95,8 @@ axioma-2.0/
 │   │   ├── langflow_file_service.py  # File upload via Langflow
 │   │   ├── knowledge_filter_service.py
 │   │   ├── api_key_service.py    # API keys management
-│   │   └── rate_limiter.py       # Rate limiting (Redis + fallback en memoria)
+│   │   ├── rate_limiter.py       # Rate limiting (Redis + fallback en memoria)
+│   │   └── semantic_cache.py     # Semantic cache LLM responses (Redis + fallback)
 │   │
 │   ├── auth/                     # Autenticación
 │   │   └── ibm_auth.py           # IBM auth mode
@@ -440,6 +441,26 @@ await client.chat.send('How do I configure embedding?');
 | RATE_LIMIT_WINDOW | Ventana de tiempo en segundos (default: `60`) |
 | RATE_LIMIT_FREE | Requests por ventana para tier free (default: `100`) |
 | RATE_LIMIT_PRO | Requests por ventana para tier pro (default: `1000`) |
+| LANGCACHE_ENABLED | Activa caché semántico de respuestas LLM (default: `true`) |
+| LANGCACHE_SIMILARITY_THRESHOLD | Umbral de similitud coseno para cache hit (default: `0.95`) |
+| LANGCACHE_TTL | TTL del cache en segundos (default: `3600`) |
+| EMBED_MODEL | Modelo de embedding activo (default: `text-embedding-3-small`) |
+
+### Soporte Multilingüe (granite-embedding-278m-multilingual)
+
+Para activar soporte nativo en 12 idiomas (ES, EN, PT, FR, DE, IT, JA, KO, ZH, AR, CS, NL):
+
+```bash
+# En .env
+EMBED_MODEL=ibm/granite-embedding-278m-multilingual
+```
+
+**Consideraciones importantes:**
+
+- El modelo genera vectores de **768 dimensiones** (distinto al default de 1536 con OpenAI)
+- Si el índice de OpenSearch ya tiene documentos con `text-embedding-3-small`, **no son buscables con granite** — los documentos existentes deben re-ingerirse
+- Estrategia recomendada: activar granite para nuevas ingestiones, luego re-ingestar los documentos existentes
+- Límite de secuencia: 512 tokens (~600-800 chars por chunk) — el chunking default es seguro
 
 ### Archivos de Config
 
