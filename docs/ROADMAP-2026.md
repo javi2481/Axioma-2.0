@@ -14,6 +14,10 @@
 - Alternativa privada y self-hosted a soluciones cloud como ChatGPT Enterprise o Azure AI Search
 - Base para producto comercial (B2B y B2C)
 
+### Documentación Completa
+- Ver `docs/PROJECT-COMPLETE.md` para documentación maestra
+- Ver `docs/PROJECT-OVERVIEW.md` para exploración detallada
+
 ### Diferenciadores
 - Multi-tenant con aislamiento de datos
 - Conectores empresariales (SharePoint, OneDrive, S3, IBM COS)
