@@ -25,12 +25,34 @@
 
 ## 1. Qué es Axioma-2.0 (OpenRAG)
 
-**Axioma** es una plataforma **RAG (Retrieval-Augmented Generation)** self-hosted de nivel empresarial diseñada para ingestion, búsqueda semántica y conversaciones con contexto.
+**Axioma** es una plataforma **RAG (Retrieval-Augmented Generation)** self-hosted de nivel empresarial basada en [langflow-ai/openrag](https://github.com/langflow-ai/openrag).
 
-### Propósito
-- plataforma de IA documental para empresas
-- Alternativa privada y self-hosted a soluciones cloud como ChatGPT Enterprise o Azure AI Search
-- Base para producto comercial (B2B y B2C)
+### El 90% YA está resuelto 🔥
+
+| Feature | Estado | Descripción |
+|---------|--------|-------------|
+| Docling | ✅ | OCR, chunking automático, preservación de jerarquía |
+| OpenSearch | ✅ | Vector store + búsqueda híbrida con RRF |
+| Langflow | ✅ | Orquestación visual de agentes (drag-and-drop) |
+| APIs FastAPI | ✅ | Endpoints: /v1/chat, /v1/search, /v1/documents |
+| MCP Server | ✅ | Conexión nativa con Cursor/Claude Desktop |
+| OAuth/OIDC | ✅ | Autenticación Google, Microsoft |
+| API Keys | ✅ | Gestión de claves para API pública |
+| Conectores | ✅ | OneDrive, SharePoint, S3, IBM COS |
+| Langfuse | ✅ | Analíticas (solo configurar .env) |
+
+### Lo que falta (10%)
+
+| Feature | Estado | Prioridad |
+|---------|--------|----------|
+| **Rate Limiting** | 🔄 En Progreso | Alta |
+
+### Tu trabajo como desarrollador
+
+1. **Configurar** `.env` con tus proveedores de modelos
+2. **Diseñar** los agentes en Langflow (interfaz visual)
+3. **Personalizar** el frontend (Next.js) con Vercel v0 para tu marca
+4. **Implementar** el middleware de Rate Limiting (el 10% restante)
 
 ### Documentación Completa
 - Ver `docs/PROJECT-COMPLETE.md` para documentación maestra
@@ -126,9 +148,18 @@
 
 | # | Feature | Estado | Descripción |
 |---|---------|--------|-------------|
-| 1 | **Rate Limiting** | 🔄 En Progreso | Throttling por API key para controlar costos |
+| 1 | **Rate Limiting** | 🔄 En Progreso | Guía de implementación lista: `docs/specs/rate-limiting-implementation-guide.md` |
 | 2 | **MCP Documentation** | ⚠️ | Documentar endpoints MCP para clientes |
 | 3 | **Swagger Polish** | ⚠️ | Pulir docstrings y descripciones |
+
+### Documentación SDD para Rate Limiting
+
+| Fase | Archivo | Estado |
+|------|---------|--------|
+| Spec | `docs/specs/api-rate-limiting.md` | ✅ |
+| Design | `docs/specs/api-rate-limiting-design.md` | ✅ |
+| Tasks | `docs/specs/api-rate-limiting-tasks.md` | ✅ |
+| Implementation | `docs/specs/rate-limiting-implementation-guide.md` | ✅ |
 
 ### 🟡 PRIORIDAD MEDIA (Q2-Q3 2026)
 
@@ -155,18 +186,22 @@
 
 ```
 [x]    Review técnico final
-[~]    Rate Limiting ← PRIORIDAD #1 (Spec creado: api-rate-limiting)
+[~]    Rate Limiting ← PRIORIDAD #1
 [ ]    Documentar API MCP para clientes
 [ ]    Pulir docstrings + Swagger
 ```
 
 **Responsable:** Backend Team  
 **Entregables:**
-- Middleware de rate limiting (Redis o slowapi)
+- Middleware de rate limiting (Redis + Starlette middleware)
 - Documentación técnica para clientes
 - OpenAPI spec pulida
 
-**Spec creado:** `docs/specs/api-rate-limiting.md`
+**Documentación SDD:**
+- Spec: `docs/specs/api-rate-limiting.md`
+- Design: `docs/specs/api-rate-limiting-design.md`
+- Tasks: `docs/specs/api-rate-limiting-tasks.md`
+- Implementation Guide: `docs/specs/rate-limiting-implementation-guide.md` ⭐
 
 ---
 
@@ -291,10 +326,11 @@
 | 2026-04-13 | Creado roadmap 2026 |
 | 2026-04-13 | Actualizado con feedback de features ya existentes (MCP, Langfuse, Swagger) |
 | 2026-04-13 | Identificado Rate Limiting como PRIORIDAD #1 |
-| 2026-04-13 | Creado spec para api-rate-limiting |
-| 2026-04-13 | Propuesta y spec guardados en Engram |
 | 2026-04-13 | Spec creado: docs/specs/api-rate-limiting.md |
 | 2026-04-13 | Diseño creado: docs/specs/api-rate-limiting-design.md |
+| 2026-04-13 | Tasks creadas: docs/specs/api-rate-limiting-tasks.md |
+| 2026-04-13 | Guía de implementación: docs/specs/rate-limiting-implementation-guide.md |
+| 2026-04-13 | Actualizado roadmap con 90% resuelto insight |
 
 ---
 
