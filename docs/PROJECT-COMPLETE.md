@@ -20,26 +20,41 @@
 
 ---
 
+---
+
 ## 1. Resumen del Proyecto
 
-**Axioma** (anteriormente **OpenRAG**) es una plataforma **RAG (Retrieval-Augmented Generation)** self-hosted de nivel empresarial diseñada para:
+**Axioma** (anteriormente **OpenRAG**) es una plataforma **RAG (Retrieval-Augmented Generation)** self-hosted de nivel empresarial basada en el código base de [langflow-ai/openrag](https://github.com/langflow-ai/openrag).
 
-- **Ingestión de documentos**: PDF, texto, SharePoint, OneDrive, S3, IBM COS
-- **Búsqueda semántica híbrida**: k-NN + keyword + prefix matching
-- **Chat con contexto**: RAG conversacional via Langflow
-- **Flows configurables**: Langflow para pipelines de AI customizables
-- **Autenticación robusta**: OAuth/OIDC, JWT, API Keys
+### 🎯 Lo que YA está resuelto (90%)
 
-### Propósito
-- Plataforma de IA documental para empresas
-- Alternativa privada y self-hosted a soluciones cloud como ChatGPT Enterprise
-- Base para producto comercial (B2B y B2C)
+El código base ya incluye todo esto listo para usar:
 
-### Diferenciadores
-- Multi-tenant con aislamiento de datos
-- Conectores empresariales (SharePoint, OneDrive, S3, IBM COS)
-- Búsqueda híbrida avanzada
-- Autenticación robusta
+| Feature | Estado | Descripción |
+|---------|--------|-------------|
+| **Docling** | ✅ | OCR, chunking automático, preservación de jerarquía (títulos, tablas, gráficos) |
+| **OpenSearch** | ✅ | Vector store + búsqueda híbrida con Reciprocal Rank Fusion (RRF) |
+| **Langflow** | ✅ | Orquestación visual de agentes (drag-and-drop) |
+| **APIs FastAPI** | ✅ | Endpoints listos: /v1/chat, /v1/search, /v1/documents |
+| **MCP Server** | ✅ | Conexión nativa con Cursor y Claude Desktop |
+| **OAuth/OIDC** | ✅ | Autenticación con Google, Microsoft |
+| **API Keys** | ✅ | Autenticación para clientes API |
+| **Conectores** | ✅ | OneDrive, SharePoint, S3, IBM COS |
+| **Langfuse** | ✅ | Analíticas (solo configurar .env) |
+
+### 🔧 Lo que falta implementar (10%)
+
+| Feature | Estado | Prioridad |
+|---------|--------|----------|
+| **Rate Limiting** | 🔄 En Progreso | Alta |
+
+### Tu trabajo como desarrollador
+
+Tu misión se limita a:
+1. **Configurar** el archivo `.env` con tus proveedores de modelos
+2. **Diseñar** los agentes en Langflow (interfaz visual)
+3. **Personalizar** el frontend (Next.js) con Vercel v0 para tu marca
+4. **Implementar** el middleware de Rate Limiting (el 10% restante)
 
 ---
 

@@ -1,7 +1,25 @@
 # Axioma-2.0 (OpenRAG) — Roadmap 2026
 
 > Documento maestro con el estado actual del proyecto y plan a futuro.
+> Basado en langflow-ai/openrag — 90% ya está resuelto 🔥
 > Última actualización: 2026-04-13
+
+---
+
+## tl;dr: 90% Resuelto, 10% Por Hacer
+
+| Lo que YA está | Lo que falta |
+|----------------|--------------|
+| Docling (OCR, chunking) | Rate Limiting |
+| OpenSearch + Búsqueda híbrida | |
+| Langflow (agentes visuales) | |
+| APIs FastAPI (/v1/*) | |
+| MCP Server nativo | |
+| OAuth, OIDC, API Keys | |
+| Conectores (OneDrive, S3, etc) | |
+| Langfuse (analíticas) | |
+
+**Tu trabajo:** Ensamblar, configurar y personalizar. Solo falta Rate Limiting.
 
 ---
 
