@@ -1504,12 +1504,20 @@ async def initialize_services():
 
 async def create_app():
     """Create and configure the FastAPI application"""
+    from services.rate_limiter import RateLimiter
+    from rate_limit_middleware import RateLimitMiddleware
+    from config.settings import REDIS_URL
+
     services = await initialize_services()
 
     app = FastAPI(title="OpenRAG API", version=OPENRAG_VERSION, debug=os.getenv("DEBUG", "false").lower() == "true")
     app.state.services = services  # Store services for cleanup
     app.state.background_tasks = set()
-    
+
+    # Rate limiting — must be added before other middleware (LIFO execution order)
+    app.state.rate_limiter = RateLimiter(redis_url=REDIS_URL)
+    app.add_middleware(RateLimitMiddleware)
+
     try:
         Instrumentator().instrument(app).expose(app)
     except Exception as e:

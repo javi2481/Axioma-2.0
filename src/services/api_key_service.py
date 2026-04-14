@@ -63,6 +63,7 @@ class APIKeyService:
         user_email: str,
         name: str,
         jwt_token: str = None,
+        tier: str = "free",
     ) -> Dict[str, Any]:
         """
         Create a new API key for a user.
@@ -93,6 +94,7 @@ class APIKeyService:
                 "user_id": user_id,
                 "user_email": user_email,
                 "name": name,
+                "tier": tier,
                 "created_at": now,
                 "last_used_at": None,
                 "revoked": False,
@@ -193,6 +195,7 @@ class APIKeyService:
                 "user_id": key_doc["user_id"],
                 "user_email": key_doc["user_email"],
                 "name": key_doc["name"],
+                "tier": key_doc.get("tier", "free"),
             }
 
         except Exception as e:

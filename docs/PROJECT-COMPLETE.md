@@ -1,7 +1,7 @@
 # Axioma-2.0 (OpenRAG) — Proyecto Completo
 
 > Documento maestro con toda la información del proyecto.
-> Última actualización: 2026-04-13
+> Última actualización: 2026-04-14
 
 ---
 
@@ -26,9 +26,9 @@
 
 **Axioma** (anteriormente **OpenRAG**) es una plataforma **RAG (Retrieval-Augmented Generation)** self-hosted de nivel empresarial basada en el código base de [langflow-ai/openrag](https://github.com/langflow-ai/openrag).
 
-### 🎯 Lo que YA está resuelto (90%)
+### 🎯 Lo que YA está resuelto (100%)
 
-El código base ya incluye todo esto listo para usar:
+El código base incluye todo esto listo para usar:
 
 | Feature | Estado | Descripción |
 |---------|--------|-------------|
@@ -41,12 +41,7 @@ El código base ya incluye todo esto listo para usar:
 | **API Keys** | ✅ | Autenticación para clientes API |
 | **Conectores** | ✅ | OneDrive, SharePoint, S3, IBM COS |
 | **Langfuse** | ✅ | Analíticas (solo configurar .env) |
-
-### 🔧 Lo que falta implementar (10%)
-
-| Feature | Estado | Prioridad |
-|---------|--------|----------|
-| **Rate Limiting** | 🔄 En Progreso | Alta |
+| **Rate Limiting** | ✅ | Redis + fallback en memoria. Tiers: free/pro/enterprise |
 
 ### Tu trabajo como desarrollador
 
@@ -54,7 +49,6 @@ Tu misión se limita a:
 1. **Configurar** el archivo `.env` con tus proveedores de modelos
 2. **Diseñar** los agentes en Langflow (interfaz visual)
 3. **Personalizar** el frontend (Next.js) con Vercel v0 para tu marca
-4. **Implementar** el middleware de Rate Limiting (el 10% restante)
 
 ---
 
@@ -65,6 +59,7 @@ Tu misión se limita a:
 | Backend | Python 3.13+, FastAPI, uvicorn, structlog |
 | Frontend | Next.js, TypeScript, React |
 | Database | OpenSearch 3.x (search + vector store) |
+| Cache / Rate Limit | Redis 7 (con fallback en memoria) |
 | AI Pipeline | Langflow |
 | Auth | OAuth 2.0, OIDC, JWT (RS256), API Keys |
 | Containers | Docker + Compose |
@@ -96,11 +91,13 @@ axioma-2.0/
 │   │   ├── chat_service.py       # Chat RAG
 │   │   ├── document_service.py   # Ingestión
 │   │   ├── api_key_service.py    # API Keys
+│   │   ├── rate_limiter.py       # Rate limiting (Redis + fallback en memoria)
 │   │   └── langflow_mcp_service.py
 │   ├── connectors/               # Conectores externos
 │   │   ├── base.py              # BaseConnector abstract
 │   │   ├── onedrive/, sharepoint/
 │   │   └── connection_manager.py
+│   ├── rate_limit_middleware.py  # Starlette middleware — intercepta /v1/*
 │   ├── session_manager.py        # JWT management
 │   └── dependencies.py           # FastAPI dependencies
 ├── frontend/                     # Next.js app
@@ -184,8 +181,15 @@ User → ChatService → SearchService (context) → Langflow → Response
 - [x] IBM COS (buckets, regional)
 - [x] BaseConnector abstracto (extensible)
 
+### ✅ Rate Limiting
+- [x] Middleware Starlette (`rate_limit_middleware.py`) — intercepta `/v1/*`
+- [x] Servicio Redis con fallback en memoria (`services/rate_limiter.py`)
+- [x] Tiers: free (100 req/min), pro (1000 req/min), enterprise (ilimitado)
+- [x] Headers `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+- [x] 13 tests unitarios
+
 ### ✅ Infra & DevOps
-- [x] Docker Compose
+- [x] Docker Compose (incluye Redis 7 con healthcheck)
 - [x] Makefile automation
 - [x] OpenSearch security
 - [x] Docling integration
@@ -231,13 +235,16 @@ User → ChatService → SearchService (context) → Langflow → Response
 Authorization: Bearer orag_xxxxxxxxxxxx
 ```
 
-### Rate Limiting (EN PROGRESO)
+### Rate Limiting ✅
 
-| Tier | Límite |
-|------|--------|
-| Free | 100 req/min |
-| Pro | 1000 req/min |
-| Enterprise | Ilimitado |
+| Tier | Límite | Header |
+|------|--------|--------|
+| Free | 100 req/min | `X-RateLimit-Limit: 100` |
+| Pro | 1000 req/min | `X-RateLimit-Limit: 1000` |
+| Enterprise | Ilimitado | `X-RateLimit-Remaining: unlimited` |
+
+Responde `429 Too Many Requests` con `Retry-After` cuando se excede el límite.
+Store primario: Redis. Fallback automático a memoria si Redis no está disponible.
 
 ---
 
@@ -269,7 +276,7 @@ Authorization: Bearer orag_xxxxxxxxxxxx
 | Vertical | Listo | Faltante |
 |----------|-------|----------|
 | **B2B** | 60% | SSO, Audit, White-label |
-| **B2C** | 85% | Rate Limiting (casi listo) |
+| **B2C** | 100% | — |
 
 ---
 
@@ -290,7 +297,7 @@ Authorization: Bearer orag_xxxxxxxxxxxx
 |-----|----------|
 | Caching | Redis LangCache (futuro) |
 | Analytics | Langfuse (ya integrado, configurar .env) |
-| Rate Limiting | **EN IMPLEMENTACIÓN** |
+| Rate Limiting | ✅ Implementado — `src/rate_limit_middleware.py` |
 | Multi-language | granite-embedding + reranker |
 
 ---
@@ -301,7 +308,7 @@ Authorization: Bearer orag_xxxxxxxxxxxx
 
 ```
 [x]    Review técnico final
-[~]    Rate Limiting (Spec + Design + Tasks listos)
+[x]    Rate Limiting ← COMPLETADO 2026-04-14
 [ ]    Documentar API MCP para clientes
 [ ]    Pulir docstrings + Swagger
 ```
@@ -335,41 +342,26 @@ Authorization: Bearer orag_xxxxxxxxxxxx
 
 ---
 
-## 9. SDD - Rate Limiting
+## 9. Rate Limiting — Implementación
 
-### Estado de Fases SDD
+### Archivos
 
-| Fase | Status | Artefacto |
-|------|--------|-----------|
-| sdd-init | ✅ | sdd-init/axioma-2.0 |
-| sdd-explore | ✅ | 6 exploraciones |
-| sdd-propose | ✅ | sdd/rate-limiting/proposal |
-| sdd-spec | ✅ | sdd/rate-limiting/spec |
-| sdd-design | ✅ | sdd/rate-limiting/design |
-| sdd-tasks | ✅ | sdd/rate-limiting/tasks |
+| Archivo | Descripción |
+|---------|-------------|
+| `src/rate_limit_middleware.py` | Middleware Starlette — intercepta `/v1/*`, extrae API key, aplica límites |
+| `src/services/rate_limiter.py` | Servicio Redis con fallback en memoria y cache de tiers (TTL 5 min) |
+| `tests/unit/test_rate_limiter.py` | 13 tests unitarios (TDD) |
+| `src/config/settings.py` | Variables `REDIS_URL`, `RATE_LIMIT_ENABLED`, `RATE_LIMIT_WINDOW`, `RATE_LIMITS` |
+| `docker-compose.yml` | Servicio `redis:7-alpine` con healthcheck y volumen persistente |
+| `pyproject.toml` | Dependencia `redis[asyncio]>=5.0.0` |
 
-### Tareas (18 total)
+### Diseño
 
-**Phase 1: Foundation (3)**
-- [ ] 1.1 Add RATE_LIMITS config
-- [ ] 1.2 Add Redis config
-- [ ] 1.3 Add Redis client in main.py
-
-**Phase 2: Core (4)**
-- [ ] 2.1 Create rate_limiter.py
-- [ ] 2.2 check_limit() method
-- [ ] 2.3 increment() method
-- [ ] 2.4 get_tier() method
-
-**Phase 3: Integration (6)**
-- [ ] 3.1 get_rate_limiter dependency
-- [ ] 3.2-3.6 Add to 6 endpoints
-
-**Phase 4: Testing (5)**
-- [ ] 4.1-4.5 Unit + Integration tests
-
-**Phase 5: Cleanup (3)**
-- [ ] 5.1-5.3 Docstrings, logs, docs
+- **Extracción del API key**: header `X-API-Key` o `Authorization: Bearer orag_...`
+- **Redis key**: `rate_limit:{sha256(api_key)}` — nunca el key en crudo
+- **Tier resolution**: memoria (TTL 5 min) → OpenSearch → default `free`
+- **Fallback**: si Redis no responde, counters en memoria (single-process)
+- **Enterprise**: cortocircuita antes de tocar Redis (siempre permitido)
 
 ---
 
@@ -400,5 +392,4 @@ Authorization: Bearer orag_xxxxxxxxxxxx
 ---
 
 *Documento vivo — actualizar conforme evoluciona el proyecto*
-*Creado: 2026-04-13*
-*SDD Phases: Init → Explore → Propose → Spec → Design → Tasks*
+*Creado: 2026-04-13 | Última actualización: 2026-04-14*

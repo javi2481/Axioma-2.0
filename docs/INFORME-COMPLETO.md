@@ -2,7 +2,7 @@
 
 > Proyecto RAG empresarial basado en OpenRAG (langflow-ai/openrag)
 > **Descubrimiento clave: El 90% ya está resuelto. Solo 10% requiere código.**
-> Última actualización: 2026-04-13
+> Última actualización: 2026-04-14
 
 ---
 
@@ -12,12 +12,17 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                     AXIOMA 2.0                                  │
 ├─────────────────────────────────────────────────────────────────┤
-│  ✅ CONFIGURACIÓN (90%)          │  💻 CÓDIGO (10%)           │
-│  ─────────────────────           │  ─────────────            │
-│  • SSO/SAML (OpenSearch)         │  • Rate Limiting           │
-│  • DLS/FLS (OpenSearch)          │  • White-label (frontend)  │
-│  • Audit Logs (OpenSearch)        │                            │
-│  • Multi-language (.env)         │                            │
+│  ✅ HECHO (código + configuración)                            │
+│  ─────────────────────────────────────────────────────────   │
+│  • Rate Limiting ← COMPLETADO 2026-04-14                     │
+│  • SSO/SAML (OpenSearch — configuración)                     │
+│  • DLS/FLS (OpenSearch — configuración)                      │
+│  • Audit Logs (OpenSearch — configuración)                   │
+│  • Multi-language (.env)                                     │
+│                                                               │
+│  💻 CÓDIGO PENDIENTE                                          │
+│  ─────────────────                                            │
+│  • White-label (frontend)                                    │
 │  • APIs, Conectores, Auth, etc   │                            │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -149,7 +154,7 @@ En términos simples: **Es un motor de búsqueda inteligente con IA que permite 
 
 | Feature | Estado | Cómo resolverlo |
 |---------|--------|-----------------|
-| **Rate Limiting** | 🔴 Por implementar | Código: Redis + Middleware (ya documentado) |
+| **Rate Limiting** | ✅ Implementado | `src/rate_limit_middleware.py` + Redis |
 | **White-label** | 🔴 Por implementar | Frontend: Vercel v0 + Next.js |
 
 ### Lo que parece "faltar" pero ya está resuelto (solo configuración)
@@ -205,7 +210,7 @@ En términos simples: **Es un motor de búsqueda inteligente con IA que permite 
 
 | Feature | Estado | Descripción |
 |---------|--------|-------------|
-| **Rate Limiting** | 🔄 Por implementar | Redis + Starlette middleware |
+| **Rate Limiting** | ✅ Implementado | Redis + Starlette middleware + fallback en memoria |
 | **White-label** | 🔴 Por implementar | Frontend con Vercel v0 |
 
 ### Configuración (No requiere código)
@@ -223,7 +228,7 @@ En términos simples: **Es un motor de búsqueda inteligente con IA que permite 
 
 ### Q1: Foundations (Ahora)
 - [x] Review técnico
-- [~] Rate Limiting ← **Código por implementar**
+- [x] Rate Limiting ← **COMPLETADO 2026-04-14**
 - [ ] Documentar MCP para clientes
 - [ ] Pulir Swagger
 
@@ -281,8 +286,7 @@ make dev
 1. Configurar `.env` con tus proveedores
 2. Diseñar agentes en Langflow
 3. Personalizar frontend con tu marca
-4. Implementar Rate Limiting
-5. Desplegar
+4. Desplegar
 
 ---
 
@@ -310,7 +314,7 @@ make dev
 
 | Feature | Prioridad | Estado |
 |---------|-----------|--------|
-| **Rate Limiting** | Alta | 🔄 Por implementar |
+| **Rate Limiting** | Alta | ✅ Implementado |
 | **White-label** | Alta | 🔴 Por implementar |
 
 ### Lo que es configuración (NO código)

@@ -94,7 +94,8 @@ axioma-2.0/
 │   │   ├── langflow_mcp_service.py   # MCP server
 │   │   ├── langflow_file_service.py  # File upload via Langflow
 │   │   ├── knowledge_filter_service.py
-│   │   └── api_key_service.py    # API keys management
+│   │   ├── api_key_service.py    # API keys management
+│   │   └── rate_limiter.py       # Rate limiting (Redis + fallback en memoria)
 │   │
 │   ├── auth/                     # Autenticación
 │   │   └── ibm_auth.py           # IBM auth mode
@@ -125,6 +126,7 @@ axioma-2.0/
 │   │   ├── screens/
 │   │   └── widgets/
 │   │
+│   ├── rate_limit_middleware.py  # Starlette middleware — rate limiting /v1/*
 │   ├── session_manager.py        # JWT + user management
 │   ├── agent.py                  # Agent logic
 │   └── dependencies.py          # FastAPI dependencies
@@ -274,6 +276,7 @@ User Message → ChatService →
 | openrag-backend | openrag-backend | 8000 | API FastAPI |
 | openrag-frontend | openrag-frontend | 3000 | Next.js UI |
 | langflow | langflow | 7860 | Langflow UI + API |
+| redis | axioma_redis | 6379 | Rate limiting + caché |
 
 ### Volúmenes
 
@@ -432,6 +435,11 @@ await client.chat.send('How do I configure embedding?');
 | MICROSOFT_GRAPH_OAUTH_CLIENT_ID | Microsoft OAuth |
 | SESSION_SECRET | JWT secret |
 | OPENRAG_ENCRYPTION_KEY | Encryption key |
+| REDIS_URL | URL de Redis (default: `redis://localhost:6379/0`) |
+| RATE_LIMIT_ENABLED | Activa/desactiva rate limiting (default: `true`) |
+| RATE_LIMIT_WINDOW | Ventana de tiempo en segundos (default: `60`) |
+| RATE_LIMIT_FREE | Requests por ventana para tier free (default: `100`) |
+| RATE_LIMIT_PRO | Requests por ventana para tier pro (default: `1000`) |
 
 ### Archivos de Config
 

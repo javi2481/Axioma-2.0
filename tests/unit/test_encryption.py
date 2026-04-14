@@ -11,6 +11,9 @@ def setup_encryption_env(monkeypatch):
     import utils.encryption
     utils.encryption._cached_master_secret = None
     monkeypatch.setenv("OPENRAG_ENCRYPTION_KEY", base64.b64encode(b"0123456789abcdef0123456789abcdef").decode("ascii"))
+    # Prevent real provider keys from the environment from overwriting test values
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
 def test_encryption_utility():
     print("Testing encryption utility...")

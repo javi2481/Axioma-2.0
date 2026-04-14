@@ -7,6 +7,21 @@ from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
+
+def get_index_name() -> str:
+    """Return the configured OpenSearch documents index name.
+
+    Reads from the config manager so that custom ``knowledge.index_name``
+    values are respected. Falls back to "documents" if the config is not
+    yet initialised (e.g. during early startup).
+    """
+    try:
+        from config.config_manager import config_manager
+        return config_manager.get_config().knowledge.index_name
+    except Exception:
+        return "documents"
+
+
 DISK_SPACE_ERROR_MESSAGE = (
     "OpenSearch has run out of available disk space. "
     "Search and indexing operations are blocked. "
@@ -233,6 +248,20 @@ async def setup_opensearch_security(
         # 3. Create openrag_user_role
         if "openrag_user_role" in roles_config:
             role_body = roles_config["openrag_user_role"]
+
+            # Enrich index_permissions with the dynamically configured index name
+            # so that the role always covers the actual index, regardless of the
+            # static patterns in roles.yml.
+            index_name = get_index_name()
+            if "index_permissions" in role_body:
+                for perm in role_body["index_permissions"]:
+                    existing = perm.get("index_patterns", [])
+                    perm["index_patterns"] = list(set(existing + [
+                        index_name,
+                        f"{index_name}*",
+                        "knowledge_filters",
+                        "knowledge_filters*",
+                    ]))
 
             logger.info(
                 "[OpenSearch Security] Creating 'openrag_user_role' role",

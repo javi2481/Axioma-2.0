@@ -32,8 +32,10 @@ async def test_setup_opensearch_security_success():
 
         await setup_opensearch_security(mock_client)
 
-        # Verify calls
-        assert mock_client.transport.perform_request.call_count == 6
+        # Verify calls: GET rolesmapping, PUT role, PUT rolesmapping/openrag_user_role,
+        # GET rolesmapping/all_access (merge existing), PUT rolesmapping/all_access,
+        # GET role verify, GET rolesmapping verify = 7 total
+        assert mock_client.transport.perform_request.call_count == 7
         mock_client.cluster.health.assert_called_once()
 
         # Check the role creation body for dynamic patterns
@@ -49,9 +51,11 @@ async def test_setup_opensearch_security_success():
 async def test_setup_opensearch_security_graceful_auth_error():
     """Test that auth/security errors are handled gracefully without raising."""
     mock_client = MagicMock()
-    # Mock a 401 Unauthorized error
+    # Mock a 401 Unauthorized error on every transport call
     mock_client.transport.perform_request = AsyncMock(side_effect=Exception("401 Unauthorized"))
-    
+    # cluster.health must be awaitable so the outer except catches the 401, not a TypeError
+    mock_client.cluster.health = AsyncMock(side_effect=Exception("401 Unauthorized"))
+
     # This should NOT raise an exception
     await setup_opensearch_security(mock_client)
     assert mock_client.transport.perform_request.call_count == 1

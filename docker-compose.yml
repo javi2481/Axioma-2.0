@@ -200,5 +200,20 @@ services:
       # - DEFAULT_FOLDER_NAME=OpenRAG
       - HIDE_GETTING_STARTED_PROGRESS=true
 
+  redis:
+    image: redis:7-alpine
+    container_name: axioma_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
 volumes:
   opensearch-data:
+  redis-data:
