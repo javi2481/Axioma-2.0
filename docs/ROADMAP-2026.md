@@ -40,7 +40,7 @@
 | OAuth/OIDC | ✅ | Autenticación Google, Microsoft |
 | API Keys | ✅ | Gestión de claves para API pública |
 | Conectores | ✅ | OneDrive, SharePoint, S3, IBM COS |
-| Langfuse | ✅ | Analíticas (solo configurar .env) |
+| Langfuse | ✅ | Observabilidad y evaluación — variables configuradas |
 | **Rate Limiting** | ✅ | Redis + fallback en memoria. Tiers: free/pro/enterprise |
 
 ### Tu trabajo como desarrollador
@@ -122,7 +122,7 @@
 - [x] Docling integration
 
 ### ✅ Observabilidad
-- [x] Langfuse integration (solo configurar .env)
+- [x] Langfuse integration (variables configuradas — observabilidad y evaluación activas)
 - [x] Prometheus metrics
 - [x] Structlog logging
 - [x] Telemetry client
@@ -219,7 +219,7 @@
 ```
 [ ]    Redis LangCache
 [ ]    Rate plans (Free/Pro/Enterprise)
-[ ]    Analytics dashboard (Langfuse)
+[x]    Analytics dashboard (Langfuse — configurado)
 [ ]    Multi-language support
 ```
 

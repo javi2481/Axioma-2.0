@@ -40,7 +40,7 @@ El código base incluye todo esto listo para usar:
 | **OAuth/OIDC** | ✅ | Autenticación con Google, Microsoft |
 | **API Keys** | ✅ | Autenticación para clientes API |
 | **Conectores** | ✅ | OneDrive, SharePoint, S3, IBM COS |
-| **Langfuse** | ✅ | Analíticas (solo configurar .env) |
+| **Langfuse** | ✅ | Observabilidad y evaluación — variables configuradas |
 | **Rate Limiting** | ✅ | Redis + fallback en memoria. Tiers: free/pro/enterprise |
 
 ### Tu trabajo como desarrollador
@@ -195,7 +195,7 @@ User → ChatService → SearchService (context) → Langflow → Response
 - [x] Docling integration
 
 ### ✅ Observabilidad
-- [x] Langfuse integration (configurar .env)
+- [x] Langfuse integration (variables configuradas — observabilidad y evaluación activas)
 - [x] Prometheus metrics
 - [x] Structlog logging
 - [x] Telemetry client
@@ -296,7 +296,7 @@ Store primario: Redis. Fallback automático a memoria si Redis no está disponib
 | Gap | Solución |
 |-----|----------|
 | Caching | Redis LangCache (futuro) |
-| Analytics | Langfuse (ya integrado, configurar .env) |
+| Analytics | ✅ Langfuse configurado — observabilidad y evaluación activas |
 | Rate Limiting | ✅ Implementado — `src/rate_limit_middleware.py` |
 | Multi-language | granite-embedding + reranker |
 

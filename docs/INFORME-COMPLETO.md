@@ -142,7 +142,7 @@ En términos simples: **Es un motor de búsqueda inteligente con IA que permite 
 | OAuth | ✅ | Google, Microsoft |
 | API Keys | ✅ | Autenticación API pública |
 | Conectores | ✅ | OneDrive, SharePoint, S3 |
-| Langfuse | ✅ | Analíticas (solo configurar .env) |
+| Langfuse | ✅ | Observabilidad y evaluación — variables configuradas |
 
 ---
 
@@ -241,7 +241,7 @@ En términos simples: **Es un motor de búsqueda inteligente con IA que permite 
 ### Q3: Scale B2C
 - [ ] Redis Cache (opcional)
 - [ ] Rate Plans
-- [ ] Analytics Dashboard (config Langfuse)
+- [x] Analytics Dashboard (Langfuse — configurado)
 - [ ] Multi-language (config Granite)
 
 ### Q4: Launch
