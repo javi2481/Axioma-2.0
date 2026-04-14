@@ -332,7 +332,7 @@ wheels = [
 
 [[package]]
 name = "openrag-mcp"
-version = "0.3.0rc3"
+version = "0.3.0rc4"
 source = { editable = "." }
 dependencies = [
     { name = "mcp" },
@@ -341,6 +341,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "httpx", specifier = ">=0.28.0" },
     { name = "mcp", specifier = ">=1.0.0" },
     { name = "openrag-sdk", specifier = "==0.3.0rc1" },
 ]
