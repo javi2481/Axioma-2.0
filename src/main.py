@@ -67,6 +67,7 @@ from api.v1 import (
     models as v1_models,
     knowledge_filters as v1_knowledge_filters,
 )
+from api.v1.settings import SettingsResponse
 
 # Configuration and setup
 from config.settings import (
@@ -1510,7 +1511,31 @@ async def create_app():
 
     services = await initialize_services()
 
-    app = FastAPI(title="OpenRAG API", version=OPENRAG_VERSION, debug=os.getenv("DEBUG", "false").lower() == "true")
+    app = FastAPI(
+        title="Axioma API",
+        version=OPENRAG_VERSION,
+        debug=os.getenv("DEBUG", "false").lower() == "true",
+        description=(
+            "REST API de la plataforma RAG Axioma.\n\n"
+            "Todos los endpoints `/v1/*` requieren autenticación con API key "
+            "en el header `X-API-Key` (formato: `orag_...`). "
+            "Las keys se crean en **Settings → API Keys**.\n\n"
+            "Alternativa: `Authorization: Bearer orag_...`"
+        ),
+        openapi_tags=[
+            {
+                "name": "public",
+                "description": (
+                    "API pública v1 — autenticada con API key `orag_...`. "
+                    "Usar para integrar Axioma en aplicaciones externas o via MCP."
+                ),
+            },
+            {
+                "name": "internal",
+                "description": "Endpoints internos usados por la UI de Axioma. No aptos para uso externo directo.",
+            },
+        ],
+    )
     app.state.services = services  # Store services for cleanup
     app.state.background_tasks = set()
 
@@ -1916,27 +1941,55 @@ async def create_app():
     # ===== Public API v1 Endpoints (API Key auth) =====
     # Chat endpoints
     app.add_api_route(
-        "/v1/chat", v1_chat.chat_create_endpoint, methods=["POST"], tags=["public"]
+        "/v1/chat",
+        v1_chat.chat_create_endpoint,
+        methods=["POST"],
+        tags=["public"],
+        summary="Enviar mensaje",
+        description=(
+            "Envía un mensaje al asistente de Axioma y recibe una respuesta grounded en la knowledge base. "
+            "Soporta streaming via Server-Sent Events (`stream: true`). "
+            "Usá `chat_id` para continuar una conversación existente. "
+            "Usá `filter_id` para acotar el contexto a un knowledge filter específico."
+        ),
     )
     app.add_api_route(
-        "/v1/chat", v1_chat.chat_list_endpoint, methods=["GET"], tags=["public"]
+        "/v1/chat",
+        v1_chat.chat_list_endpoint,
+        methods=["GET"],
+        tags=["public"],
+        summary="Listar conversaciones",
+        description="Devuelve todas las conversaciones del usuario autenticado con metadata (título, fecha, cantidad de mensajes).",
     )
     app.add_api_route(
         "/v1/chat/{chat_id}",
         v1_chat.chat_get_endpoint,
         methods=["GET"],
         tags=["public"],
+        summary="Obtener conversación",
+        description="Recupera el historial completo de mensajes de una conversación específica por su ID.",
     )
     app.add_api_route(
         "/v1/chat/{chat_id}",
         v1_chat.chat_delete_endpoint,
         methods=["DELETE"],
         tags=["public"],
+        summary="Eliminar conversación",
+        description="Elimina permanentemente una conversación y todos sus mensajes.",
     )
 
     # Search endpoint
     app.add_api_route(
-        "/v1/search", v1_search.search_endpoint, methods=["POST"], tags=["public"]
+        "/v1/search",
+        v1_search.search_endpoint,
+        methods=["POST"],
+        tags=["public"],
+        summary="Búsqueda semántica",
+        description=(
+            "Realiza una búsqueda semántica híbrida sobre la knowledge base. "
+            "Devuelve chunks rankeados con filename, texto, score, página y MIME type. "
+            "Usá `score_threshold` para filtrar resultados de baja relevancia."
+        ),
     )
 
     # Documents endpoints
@@ -1945,18 +1998,28 @@ async def create_app():
         v1_documents.ingest_endpoint,
         methods=["POST"],
         tags=["public"],
+        summary="Ingestar documento",
+        description=(
+            "Sube e ingesta un archivo en la knowledge base de Axioma. "
+            "Acepta `multipart/form-data`. La ingestión es asincrónica — "
+            "usá el `task_id` retornado con `GET /v1/tasks/{task_id}` para verificar el estado."
+        ),
     )
     app.add_api_route(
         "/v1/tasks/{task_id}",
         v1_documents.task_status_endpoint,
         methods=["GET"],
         tags=["public"],
+        summary="Estado de tarea de ingestión",
+        description="Consulta el estado de una tarea de ingestión asincrónica (pending, running, complete, failed).",
     )
     app.add_api_route(
         "/v1/documents",
         v1_documents.delete_document_endpoint,
         methods=["DELETE"],
         tags=["public"],
+        summary="Eliminar documento",
+        description="Elimina un documento de la knowledge base por su filename.",
     )
 
     # Settings endpoints
@@ -1965,12 +2028,17 @@ async def create_app():
         v1_settings.get_settings_endpoint,
         methods=["GET"],
         tags=["public"],
+        summary="Ver configuración",
+        description="Devuelve la configuración actual de Axioma: LLM provider/model, embeddings, chunk settings y system prompt.",
+        response_model=SettingsResponse,
     )
     app.add_api_route(
         "/v1/settings",
         v1_settings.update_settings_endpoint,
         methods=["POST"],
         tags=["public"],
+        summary="Actualizar configuración",
+        description="Actualiza la configuración de Axioma. Solo se modifican los campos incluidos en el body.",
     )
 
     # Models endpoint
@@ -1979,6 +2047,12 @@ async def create_app():
         v1_models.list_models_endpoint,
         methods=["GET"],
         tags=["public"],
+        summary="Listar modelos de un provider",
+        description=(
+            "Lista los modelos de lenguaje y embedding disponibles para el provider especificado. "
+            "Valores válidos para `provider`: `openai`, `anthropic`, `ollama`, `watsonx`. "
+            "Las credenciales del provider deben estar configuradas en Axioma."
+        ),
     )
 
     # Knowledge filters endpoints
@@ -1987,30 +2061,44 @@ async def create_app():
         v1_knowledge_filters.create_endpoint,
         methods=["POST"],
         tags=["public"],
+        summary="Crear knowledge filter",
+        description=(
+            "Crea un filtro con nombre que acota chat y search a un subconjunto de la knowledge base "
+            "(por fuente, tipo de documento, owner, etc.). "
+            "Pasá el `id` retornado como `filter_id` en requests de chat y search."
+        ),
     )
     app.add_api_route(
         "/v1/knowledge-filters/search",
         v1_knowledge_filters.search_endpoint,
         methods=["POST"],
         tags=["public"],
+        summary="Buscar knowledge filters",
+        description="Busca knowledge filters por nombre o descripción.",
     )
     app.add_api_route(
         "/v1/knowledge-filters/{filter_id}",
         v1_knowledge_filters.get_endpoint,
         methods=["GET"],
         tags=["public"],
+        summary="Obtener knowledge filter",
+        description="Recupera un knowledge filter específico por su ID.",
     )
     app.add_api_route(
         "/v1/knowledge-filters/{filter_id}",
         v1_knowledge_filters.update_endpoint,
         methods=["PUT"],
         tags=["public"],
+        summary="Actualizar knowledge filter",
+        description="Actualiza el nombre, descripción o query de un knowledge filter existente.",
     )
     app.add_api_route(
         "/v1/knowledge-filters/{filter_id}",
         v1_knowledge_filters.delete_endpoint,
         methods=["DELETE"],
         tags=["public"],
+        summary="Eliminar knowledge filter",
+        description="Elimina permanentemente un knowledge filter.",
     )
 
     # Add startup event handler
