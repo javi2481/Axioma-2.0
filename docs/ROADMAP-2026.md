@@ -232,55 +232,181 @@
 
 ---
 
-### Q4 2026: polish & Launch
+### Q4 2026: Air-gap + Launch
 
 ```
+[ ]    SGLang integration (inferencia self-hosted)
+[ ]    Air-gap deployment guide
 [ ]    Performance optimization
 [ ]    Security audit
-[ ]    Beta program
+[ ]    Beta program (las 3 verticales)
 [ ]    Public launch
 [ ]    Customer onboarding flow
 ```
 
 **Responsable:** Full Team  
 **Entregables:**
+- SGLang como provider de inferencia (drop-in, OpenAI-compatible)
+- Soporte certificado para IBM Granite, Llama 3, Qwen
+- Guía de deployment air-gap para enterprise
 - GA release
-- Documentación para clientes
-- Portal de desarrollador
+- Documentación por vertical
+- Portal de self-service (B2C)
 
 ---
 
-## 6. Estado por Vertical
+## 6. Verticales de Negocio
 
-### B2B (Enterprise)
-
-| Feature | Status |
-|---------|--------|
-| OAuth/OIDC | ✅ Listo |
-| API Keys | ✅ Listo |
-| DLS/FLS | ⚠️ Configurar |
-| SSO/SAML | ❌ Por implementar |
-| Audit Logs | ⚠️ Configurar |
-| White-label | ❌ Por implementar |
-
-**Listo para:** 60%
-
-### B2C (Consumer)
-
-| Feature | Status |
-|---------|--------|
-| API Keys | ✅ Listo |
-| API v1 | ✅ Listo |
-| MCP | ✅ Listo (falta doc) |
-| Rate Limiting | ✅ Implementado |
-| Analytics | ✅ Configurar |
-| Cache | ❌ Por implementar |
-
-**Listo para:** 100%
+Axioma puede servir tres verticales con distintos niveles de inversión de infraestructura. La elección de vertical define el go-to-market, los requisitos técnicos y el stack de inferencia.
 
 ---
 
-## 7. Tech Debt & Known Issues
+### Vertical 1 — B2C / Developer SaaS
+
+**Cliente objetivo:** Desarrolladores, startups, equipos pequeños que necesitan un RAG privado sin gestionar infraestructura.
+
+**Propuesta de valor:** API lista para usar, onboarding en minutos, pago por uso.
+
+| Feature | Status |
+|---------|--------|
+| API v1 pública | ✅ Listo |
+| API Keys (`orag_...`) | ✅ Listo |
+| Rate Limiting (free/pro/enterprise) | ✅ Listo |
+| MCP (Cursor, Claude Desktop) | ✅ Listo |
+| Analytics (Langfuse) | ✅ Configurado |
+| Conectores (OneDrive, S3, etc.) | ✅ Listo |
+| Rate Plans / Billing | ❌ Pendiente |
+| Portal de self-service | ❌ Pendiente |
+
+**LLM stack:** OpenAI / Anthropic via API (costos trasladados al cliente o absorbidos en el plan).
+
+**Listo para producción:** 90% — falta billing y portal.
+
+---
+
+### Vertical 2 — B2B Cloud / Enterprise Managed
+
+**Cliente objetivo:** Empresas medianas/grandes que quieren un RAG empresarial gestionado, con sus propios datos, SSO, auditoría y branding propio. Los datos viajan a APIs de LLM en cloud.
+
+**Propuesta de valor:** Plataforma enterprise-grade, white-label, compliance parcial, sin gestión de infra de modelos.
+
+| Feature | Status |
+|---------|--------|
+| OAuth/OIDC (Google, Microsoft) | ✅ Listo |
+| API Keys | ✅ Listo |
+| Multi-tenant (aislamiento por owner) | ✅ Listo |
+| Rate Limiting | ✅ Listo |
+| Conectores empresariales | ✅ Listo |
+| SSO/SAML | ⚠️ Config OpenSearch |
+| Audit Logs | ⚠️ Config OpenSearch |
+| DLS/FLS (permisos granulares) | ⚠️ Config OpenSearch |
+| White-label / Branding | ❌ Código frontend |
+
+**LLM stack:** OpenAI / Anthropic / IBM Watsonx via API.
+
+**Listo para producción:** 65% — falta SSO, Audit, White-label.
+
+---
+
+### Vertical 3 — B2B Enterprise Air-gap / On-premise
+
+**Cliente objetivo:** Corporaciones en sectores regulados (banca, salud, gobierno, defensa) que **no pueden enviar datos a APIs externas**. Todo debe correr en su infraestructura o en cloud privado.
+
+**Propuesta de valor:** RAG 100% privado — datos, modelos e inferencia en su propia infra. Cero datos salen de su red.
+
+| Feature | Status |
+|---------|--------|
+| Toda la plataforma Axioma | ✅ Deploy on-premise |
+| Ollama (modelos locales, single GPU) | ✅ Soportado |
+| IBM Watsonx (modelos propios) | ✅ Soportado |
+| **SGLang (inferencia de alto rendimiento)** | 🔵 Roadmap Q4 2026 |
+| SSO/SAML | ⚠️ Config |
+| Audit Logs | ⚠️ Config |
+| Air-gap deployment guide | ❌ Pendiente |
+
+**LLM stack:** SGLang + IBM Granite / Llama 3 / Qwen en GPUs propias del cliente.
+
+**Listo para producción:** 40% — falta SGLang integration, air-gap guide, SSO.
+
+**Diferenciador clave:** Axioma ya tiene Ollama como provider. SGLang es la evolución: misma compatibilidad OpenAI API, pero con RadixAttention (prefix caching), throughput 5-7x mayor y soporte para cargas enterprise multi-tenant.
+
+---
+
+### Resumen de verticales
+
+| | B2C SaaS | B2B Cloud | B2B Air-gap |
+|--|----------|-----------|-------------|
+| **Datos en cloud API** | Sí | Sí | NO |
+| **GPU propia necesaria** | No | No | Sí |
+| **SSO/SAML** | No | Sí | Sí |
+| **White-label** | Opcional | Sí | Sí |
+| **Compliance nivel** | Bajo | Medio | Alto |
+| **Precio** | Por uso | SaaS mensual | Licencia + soporte |
+| **Time to market** | Ahora | Q2-Q3 2026 | Q4 2026+ |
+
+---
+
+## 7. Infraestructura de Inferencia — SGLang
+
+### Qué es SGLang
+
+[SGLang](https://github.com/sgl-project/sglang) es un framework de serving de LLMs de alto rendimiento. 25.8k stars en GitHub, `v0.5.10` (Abril 2026), en producción en más de 400.000 GPUs.
+
+**Por qué importa para Axioma:** es la pieza que habilita la **Vertical 3 (Air-gap)** — permite correr modelos open source (Granite, Llama 3, Qwen) en la infra del cliente con performance enterprise.
+
+### Innovación clave: RadixAttention
+
+RadixAttention organiza el KV Cache en un árbol radix con política LRU. El impacto directo en RAG:
+
+- **System prompts compartidos**: si 10 usuarios envían requests con el mismo system prompt de 2000 tokens, la GPU lo procesa una sola vez.
+- **Documentos largos repetidos**: en multi-agente, si el Supervisor ya procesó un contrato de 50 páginas, el Agente Trabajador reutiliza el caché — cero recalculo.
+- **Resultado medido**: 5-7x mayor throughput, latencia al primer token drásticamente reducida.
+
+### Por qué es drop-in para Axioma
+
+SGLang expone una **API 100% compatible con OpenAI**. Axioma ya tiene soporte multi-provider. Integrar SGLang es un cambio de configuración:
+
+```bash
+# .env — apuntar al servidor SGLang en lugar de OpenAI
+OPENAI_BASE_URL=http://sglang-server:30000/v1
+OPENAI_API_KEY=none  # SGLang no requiere key real
+```
+
+Cero cambios de código en Axioma para la integración básica.
+
+### Modelos soportados relevantes para Axioma
+
+| Modelo | Parámetros | GPU mínima | Caso de uso |
+|--------|-----------|------------|-------------|
+| IBM Granite 3.1 8B | 8B | 1x A100 40GB (FP8) | Chat RAG, clasificación |
+| IBM Granite 3.1 34B | 34B | 2x A100 80GB | Razonamiento complejo |
+| Llama 3.1 8B | 8B | 1x A100 40GB | General purpose |
+| Llama 3.1 70B | 70B | 4x A100 80GB | Enterprise reasoning |
+| Qwen2.5 7B | 7B | 1x A100 40GB | Multilingual |
+
+Con cuantización FP8/INT4 los requisitos de GPU se reducen ~2x.
+
+### Hardware mínimo viable (entrada)
+
+| Configuración | GPU | VRAM | Modelos posibles |
+|--------------|-----|------|-----------------|
+| Entry (1 GPU) | NVIDIA A100 40GB | 40 GB | Granite 8B, Llama 8B (FP16) |
+| Standard (1 GPU) | NVIDIA H100 80GB | 80 GB | Granite 34B, Llama 70B (FP8) |
+| Scale (multi-GPU) | 4x H100 | 320 GB | Llama 70B (FP16), modelos mayores |
+
+Para clientes enterprise con VMware/baremetal ya existente: AMD MI300 también es soportado.
+
+### Plan de integración (Q4 2026)
+
+1. Agregar `sglang` como provider en `src/config/settings.py` (junto a `openai`, `ollama`, etc.)
+2. Configurar `OPENAI_BASE_URL` dinámico según provider seleccionado
+3. `docker-compose.sglang.yml` — perfil de compose para deployments con GPU
+4. Guía de air-gap deployment para enterprise
+5. Benchmark comparativo: SGLang vs Ollama vs API cloud (latencia, throughput, costo)
+
+---
+
+## 9. Tech Debt & Known Issues
 
 - [ ] No existe tests de integración con todos los conectores
 - [ ] Documentación de API dispersa
@@ -289,7 +415,7 @@
 
 ---
 
-## 8. Métricas Objetivo 2026
+## 10. Métricas Objetivo 2026
 
 | Métrica | Target |
 |---------|--------|
@@ -301,7 +427,7 @@
 
 ---
 
-## 9. Links Relevantes
+## 11. Links Relevantes
 
 - Repositorio: `axioma-2.0`
 - Docs: `/docs` (Swagger)
@@ -310,7 +436,7 @@
 
 ---
 
-## 10. Changelog
+## 12. Changelog
 
 | Fecha | Cambio |
 |-------|--------|
@@ -329,6 +455,8 @@
 | 2026-04-14 | docs/MCP-GUIDE.md: guía completa para conectar Cursor y Claude Desktop via MCP |
 | 2026-04-14 | Swagger: título "Axioma API", descripción, openapi_tags y summaries en 16 endpoints públicos |
 | 2026-04-14 | Q1 2026 completado al 100% |
+| 2026-04-14 | Definidas 3 verticales: B2C SaaS, B2B Cloud, B2B Air-gap |
+| 2026-04-14 | SGLang agregado al roadmap Q4 como motor de inferencia para Vertical 3 |
 
 ---
 
