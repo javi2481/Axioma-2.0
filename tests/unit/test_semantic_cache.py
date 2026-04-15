@@ -6,7 +6,7 @@ from services.semantic_cache import SemanticCache
 
 @pytest.fixture
 def cache():
-    return SemanticCache("redis://localhost:6379/0", threshold=0.95, ttl=3600)
+    return SemanticCache(valkey_url="redis://localhost:6379/0", threshold=0.95, ttl=3600)
 
 
 # --- cache hit ---
@@ -38,7 +38,7 @@ async def test_get_returns_none_on_miss(cache):
     assert result is None
 
 
-# --- fallback: Redis no disponible en init ---
+# --- fallback: Valkey no disponible en init ---
 @pytest.mark.asyncio
 async def test_get_returns_none_when_init_fails(cache):
     cache._init_failed = True
@@ -50,7 +50,7 @@ async def test_get_returns_none_when_init_fails(cache):
 @pytest.mark.asyncio
 async def test_get_returns_none_on_lookup_exception(cache):
     mock_redis_cache = MagicMock()
-    mock_redis_cache.lookup.side_effect = Exception("Redis connection error")
+    mock_redis_cache.lookup.side_effect = Exception("Valkey connection error")
     cache._cache = mock_redis_cache
 
     result = await cache.get("pregunta")
@@ -80,7 +80,7 @@ async def test_set_is_noop_when_init_failed(cache):
     await cache.set("pregunta", "respuesta")
 
 
-# --- lazy init llama a RedisSemanticCache ---
+# --- lazy init llama a RedisSemanticCache (langchain-redis, compatible con Valkey) ---
 @pytest.mark.asyncio
 async def test_init_creates_redis_cache(cache):
     # Los imports son lazy (dentro del método) → parchear el paquete real
@@ -119,7 +119,7 @@ async def test_set_handles_update_exception(cache):
 async def test_init_failure_sets_flag_and_does_not_retry(cache):
     with patch("langchain_redis.RedisSemanticCache") as mock_cls, \
          patch("langchain_openai.OpenAIEmbeddings"):
-        mock_cls.side_effect = Exception("no redis")
+        mock_cls.side_effect = Exception("no valkey")
         await cache._get_cache()  # falla, marca _init_failed = True
         assert cache._init_failed is True
 

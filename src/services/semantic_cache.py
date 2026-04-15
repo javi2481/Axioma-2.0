@@ -1,11 +1,12 @@
 """
-Semantic cache for LLM responses using Redis vector search (RediSearch).
+Semantic cache for LLM responses using Valkey vector search (valkey-search).
 
 Uses OpenAI embeddings to find semantically similar previous queries and
 return cached responses, avoiding redundant LLM calls for identical or
 near-identical prompts.
 
-Falls back silently to passthrough if Redis/RediSearch is unavailable.
+Compatible with Valkey 9.x + valkey-search (RediSearch API).
+Falls back silently to passthrough if Valkey/valkey-search is unavailable.
 """
 
 import hashlib
@@ -19,12 +20,12 @@ class SemanticCache:
     """
     Wrapper around LangChain RedisSemanticCache with graceful fallback.
 
-    If Redis is unavailable or the RediSearch module is missing, all
-    operations return None / no-op so the chat flow is never interrupted.
+    If Valkey/valkey-search is unavailable, all operations return None / no-op
+    so the chat flow is never interrupted.
     """
 
-    def __init__(self, redis_url: str, threshold: float = 0.95, ttl: int = 3600):
-        self._redis_url = redis_url
+    def __init__(self, valkey_url: str, threshold: float = 0.95, ttl: int = 3600):
+        self._valkey_url = valkey_url
         self._threshold = threshold
         self._ttl = ttl
         self._cache = None
@@ -40,7 +41,7 @@ class SemanticCache:
 
                 embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
                 self._cache = RedisSemanticCache(
-                    redis_url=self._redis_url,
+                    redis_url=self._valkey_url,  # langchain-redis kwarg — Valkey is protocol-compatible
                     embeddings=embeddings,
                     score_threshold=self._threshold,
                     ttl=self._ttl,
