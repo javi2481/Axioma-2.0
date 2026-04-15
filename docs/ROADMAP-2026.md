@@ -2,7 +2,7 @@
 
 > Documento maestro con el estado actual del proyecto y plan a futuro.
 > Basado en langflow-ai/openrag — 90% ya está resuelto 🔥
-> Última actualización: 2026-04-14
+> Última actualización: 2026-04-15
 
 ---
 
@@ -11,14 +11,20 @@
 | Lo que YA está |
 |----------------|
 | Docling (OCR, chunking) |
-| OpenSearch + Búsqueda híbrida |
+| OpenSearch + Búsqueda híbrida + RRF |
 | Langflow (agentes visuales) |
 | APIs FastAPI (/v1/*) |
 | MCP Server nativo |
 | OAuth, OIDC, API Keys |
 | Conectores (OneDrive, S3, etc) |
-| Langfuse (analíticas) |
+| Langfuse (trazas + scores Ragas + Guardian) |
 | **Rate Limiting (Valkey + fallback en memoria)** |
+| **Valkey I/O threading — 4 threads, lazyfree** |
+| **OpenSearch Hybrid + RRF** |
+| **Ragas batch eval nocturno** |
+| **LLMRouter (Granite 4.0 H-Tiny via Ollama)** |
+| **Granite Guardian 3.3 async guardrail** |
+| **HybridChunker + Context Expansion** |
 
 **Tu trabajo:** Ensamblar, configurar y personalizar. El código está completo.
 
@@ -40,8 +46,14 @@
 | OAuth/OIDC | ✅ | Autenticación Google, Microsoft |
 | API Keys | ✅ | Gestión de claves para API pública |
 | Conectores | ✅ | OneDrive, SharePoint, S3, IBM COS |
-| Langfuse | ✅ | Observabilidad y evaluación — variables configuradas |
+| Langfuse | ✅ | Trazas + scores Ragas (nocturno) + Guardian (por request) |
 | **Rate Limiting** | ✅ | Valkey 9.x + fallback en memoria. Tiers: free/pro/enterprise |
+| **Valkey I/O threading** | ✅ | 4 threads, lazyfree — 230%+ throughput en carga alta |
+| **OpenSearch Hybrid + RRF** | ✅ | BM25 + KNN via Reciprocal Rank Fusion |
+| **Ragas batch eval** | ✅ | `scripts/ragas_batch_eval.py` — corre nightly vía cron |
+| **LLMRouter** | ✅ | Granite 4.0 H-Tiny (Ollama). Toggle `GRANITE_BACKEND=sglang` para Fase 3 |
+| **Granite Guardian 3.3** | ✅ | Guardrail async. Activar: `GUARDIAN_ENABLED=true` |
+| **HybridChunker** | ✅ | Secciones + context expansion. Activar: `HYBRID_CHUNKER_ENABLED=true` |
 
 ### Tu trabajo como desarrollador
 

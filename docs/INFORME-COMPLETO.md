@@ -2,7 +2,7 @@
 
 > Proyecto RAG empresarial basado en OpenRAG (langflow-ai/openrag)
 > **Descubrimiento clave: El 90% ya está resuelto. Solo 10% requiere código.**
-> Última actualización: 2026-04-14
+> Última actualización: 2026-04-15
 
 ---
 
@@ -15,6 +15,12 @@
 │  ✅ HECHO (código + configuración)                            │
 │  ─────────────────────────────────────────────────────────   │
 │  • Rate Limiting ← COMPLETADO 2026-04-14                     │
+│  • Migración Redis → Valkey 9.x ← COMPLETADO 2026-04-14     │
+│  • Valkey I/O threading + OpenSearch RRF ← 2026-04-15       │
+│  • Ragas batch eval nocturno ← 2026-04-15                   │
+│  • LLMRouter + Granite 4.0 H-Tiny ← 2026-04-15             │
+│  • Granite Guardian 3.3 async guardrail ← 2026-04-15        │
+│  • HybridChunker + Context Expansion ← 2026-04-15           │
 │  • SSO/SAML (OpenSearch — configuración)                     │
 │  • DLS/FLS (OpenSearch — configuración)                      │
 │  • Audit Logs (OpenSearch — configuración)                   │
@@ -226,11 +232,25 @@ En términos simples: **Es un motor de búsqueda inteligente con IA que permite 
 
 ## 8. El Futuro ( Roadmap 2026)
 
-### Q1: Foundations (Ahora)
-- [x] Review técnico
-- [x] Rate Limiting ← **COMPLETADO 2026-04-14**
-- [x] Documentar MCP para clientes ← **COMPLETADO 2026-04-14**
-- [x] Pulir Swagger ← **COMPLETADO 2026-04-14**
+### Fase 0 + Fase 1 ✅ COMPLETADAS (2026-04-14/15)
+- [x] Migración Redis → Valkey 9.x (BSD-3-Clause) ← **2026-04-14**
+- [x] Rate Limiting ← **2026-04-14**
+- [x] Documentar MCP para clientes ← **2026-04-14**
+- [x] Valkey I/O threading (4 threads, lazyfree) ← **2026-04-15**
+- [x] OpenSearch hybrid + RRF normalization pipeline ← **2026-04-15**
+- [x] Ragas batch eval nocturno con Langfuse ← **2026-04-15**
+
+### Fase 2 ✅ COMPLETA (2026-04-15)
+- [x] LLMRouter + Granite 4.0 H-Tiny (Ollama, toggle SGLang) ← **2026-04-15**
+- [x] Granite Guardian 3.3 async guardrail ← **2026-04-15**
+- [x] HybridChunker + Context Expansion ← **2026-04-15**
+
+### Fase 3: Diferenciación Enterprise (Q2-Q3 2026)
+- [ ] SGLang backend (`GRANITE_BACKEND=sglang`) — RadixAttention MoE
+- [ ] Self-RAG / CRAG patterns en Langflow
+- [ ] Valkey HEXPIRE per-field TTL (sesiones multi-agente)
+- [ ] Multi-agent Langflow + MCP externo (Slack, SQL, Jira)
+- [ ] Grafana AIOps dashboards
 
 ### Q2: Enterprise B2B (Configuración)
 - [ ] SSO/SAML ← Config OpenSearch

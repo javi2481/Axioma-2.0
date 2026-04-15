@@ -39,9 +39,13 @@
 ### Infraestructura
 | Servicio | Tecnología |
 |----------|-------------|
-| Database | OpenSearch 3.x |
-| Vector Store | OpenSearch (index con embeddings) |
+| Database | OpenSearch 3.x (hybrid search + RRF) |
+| Vector Store | OpenSearch (index con embeddings + HybridChunker metadata) |
+| Cache | Valkey 9.x (I/O multi-threading, lazyfree) |
 | AI Pipeline | Langflow |
+| LLM Router | Ollama → Granite 4.0 H-Tiny (toggle SGLang Fase 3) |
+| Guardrail | Granite Guardian 3.3 async (fire-and-forget) |
+| Evaluación | Ragas batch nocturno + Langfuse scores |
 | Containers | Docker + Compose |
 
 ### AI/LLM Providers
@@ -96,7 +100,9 @@ axioma-2.0/
 │   │   ├── knowledge_filter_service.py
 │   │   ├── api_key_service.py    # API keys management
 │   │   ├── rate_limiter.py       # Rate limiting (Valkey + fallback en memoria)
-│   │   └── semantic_cache.py     # Semantic cache LLM responses (Valkey + fallback)
+│   │   ├── semantic_cache.py     # Semantic cache LLM responses (Valkey + fallback)
+│   │   ├── llm_router.py         # LLM provider router (Ollama/SGLang) — Granite 4.0 H-Tiny
+│   │   └── guardrail_service.py  # Granite Guardian 3.3 async safety/faithfulness eval
 │   │
 │   ├── auth/                     # Autenticación
 │   │   └── ibm_auth.py           # IBM auth mode

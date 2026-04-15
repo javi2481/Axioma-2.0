@@ -1,7 +1,7 @@
 # Axioma-2.0 (OpenRAG) — Proyecto Completo
 
 > Documento maestro con toda la información del proyecto.
-> Última actualización: 2026-04-14
+> Última actualización: 2026-04-15
 
 ---
 
@@ -40,8 +40,14 @@ El código base incluye todo esto listo para usar:
 | **OAuth/OIDC** | ✅ | Autenticación con Google, Microsoft |
 | **API Keys** | ✅ | Autenticación para clientes API |
 | **Conectores** | ✅ | OneDrive, SharePoint, S3, IBM COS |
-| **Langfuse** | ✅ | Observabilidad y evaluación — variables configuradas |
+| **Langfuse** | ✅ | Observabilidad y evaluación — trazas + scores desde guardrail y Ragas |
 | **Rate Limiting** | ✅ | Valkey 9.x + fallback en memoria. Tiers: free/pro/enterprise |
+| **Valkey I/O threading** | ✅ | 4 threads, lazyfree eviction — 230%+ throughput en carga alta |
+| **OpenSearch Hybrid + RRF** | ✅ | BM25 + KNN via Reciprocal Rank Fusion — mejor relevancia en retrieval |
+| **Ragas batch eval** | ✅ | Evaluación nocturna automática: Faithfulness, Answer Relevancy, Context Precision |
+| **LLMRouter** | ✅ | Enrutador LLM provider-agnóstico (Ollama/SGLang). Granite 4.0 H-Tiny listo |
+| **Granite Guardian** | ✅ | Guardrail asíncrono fire-and-forget: safety + faithfulness. Scores a Langfuse |
+| **HybridChunker** | ✅ | Chunking con jerarquía de secciones + context expansion en retrieval |
 
 ### Tu trabajo como desarrollador
 
@@ -304,40 +310,49 @@ Store primario: Valkey 9.x. Fallback automático a memoria si Valkey no está di
 
 ## 8. Roadmap 2026
 
-### Q1: Foundations ✅ COMPLETO
+### Fase 0: Migración Redis → Valkey ✅ COMPLETA (2026-04-14)
 
 ```
-[x]    Review técnico final
-[x]    Rate Limiting ← COMPLETADO 2026-04-14
-[x]    Documentar API MCP para clientes ← COMPLETADO 2026-04-14
-[x]    Pulir docstrings + Swagger ← COMPLETADO 2026-04-14
+[x]    RateLimiter migrado a Valkey 9.x (BSD-3-Clause)
+[x]    SemanticCache migrado a Valkey 9.x
+[x]    docker-compose actualizado (valkey/valkey-bundle:latest)
+[x]    Tests + docs actualizados
 ```
 
-### Q2: Enterprise B2B
+### Fase 1: Infraestructura ✅ COMPLETA (2026-04-15) — commit db2495f4
 
 ```
-[ ]    SSO/SAML setup
-[ ]    OpenSearch Audit Logs
-[ ]    DLS/FLS granular permissions
-[ ]    White-label base
+[x]    Valkey I/O threading (--io-threads 4, lazyfree)
+[x]    OpenSearch hybrid query + RRF normalization pipeline
+[x]    Ragas batch eval nocturno (scripts/ragas_batch_eval.py)
 ```
 
-### Q3: Scale B2C
+### Fase 2: Capacidades de Modelo ✅ COMPLETA (2026-04-15) — commit 0b0b8319
 
 ```
-[ ]    Valkey LangCache
-[ ]    Rate plans (Free/Pro/Enterprise)
-[ ]    Analytics dashboard
-[ ]    Multi-language support
+[x]    LLMRouter (src/services/llm_router.py) — Granite 4.0 H-Tiny via Ollama
+[x]    Granite Guardian 3.3 async guardrail (src/services/guardrail_service.py)
+[x]    HybridChunker + Context Expansion (document_processing.py + search_service.py)
 ```
 
-### Q4: Polish & Launch
+### Fase 3: Diferenciación Enterprise (Q2-Q3 2026)
 
 ```
-[ ]    Performance optimization
-[ ]    Security audit
-[ ]    Beta program
-[ ]    Public launch
+[ ]    SGLang backend (GRANITE_BACKEND=sglang) — RadixAttention para MoE
+[ ]    Self-RAG / CRAG patterns en Langflow (nodos de reflexión)
+[ ]    Valkey HEXPIRE per-field TTL para memoria de sesión multi-agente
+[ ]    Multi-agent Langflow + MCP externo (Slack, SQL, Jira)
+[ ]    Grafana AIOps dashboards (FastAPI + OpenSearch + Valkey)
+[ ]    OpenSearch UBI + DLS/FLS compliance multi-tenant
+```
+
+### Fase 4: On-demand del cliente (Q3-Q4 2026)
+
+```
+[ ]    Granite Vision 3.3-2B para charts/infografías (DocVQA 0.91)
+[ ]    Bounding boxes en PDF (PDF.js overlay con coordinate tokens)
+[ ]    Ragas TestsetGenerator por cliente
+[ ]    Pathway para ingesta en tiempo real (streams hacia OpenSearch)
 ```
 
 ---
