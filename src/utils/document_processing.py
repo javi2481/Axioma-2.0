@@ -82,6 +82,104 @@ def process_text_file(file_path: str) -> dict:
     }
 
 
+def extract_with_hybrid_chunker(doc_dict: dict) -> dict:
+    """
+    Deserialize a DoclingDocument JSON dict (from docling-serve) and apply
+    HybridChunker to produce semantically coherent chunks with section metadata.
+
+    Requires the ``docling`` Python SDK (``pip install docling``).
+    Only called when ``HYBRID_CHUNKER_ENABLED=true``.
+
+    Returns the same schema as ``extract_relevant()`` for drop-in compatibility,
+    with extra fields per chunk:
+        section_title    : title of the nearest heading above this chunk (or None)
+        parent_section   : title of the parent section (or None)
+        chunk_index      : 0-based position within this document
+        prev_chunk_index : index of the preceding chunk (or None)
+        next_chunk_index : index of the following chunk (or None)
+    """
+    try:
+        from docling.datamodel.document import DoclingDocument
+        from docling.chunking import HybridChunker
+    except ImportError as exc:
+        logger.error(
+            "docling SDK not installed — falling back to extract_relevant(). "
+            "Run: pip install docling",
+            error=str(exc),
+        )
+        return extract_relevant(doc_dict)
+
+    try:
+        doc = DoclingDocument.model_validate(doc_dict)
+    except Exception as exc:
+        logger.warning(
+            "extract_with_hybrid_chunker: DoclingDocument validation failed, "
+            "falling back to extract_relevant()",
+            error=str(exc),
+        )
+        return extract_relevant(doc_dict)
+
+    chunker = HybridChunker()
+    try:
+        raw_chunks = list(chunker.chunk(doc))
+    except Exception as exc:
+        logger.warning(
+            "extract_with_hybrid_chunker: HybridChunker.chunk() failed, "
+            "falling back to extract_relevant()",
+            error=str(exc),
+        )
+        return extract_relevant(doc_dict)
+
+    chunks = []
+    total = len(raw_chunks)
+
+    for i, chunk in enumerate(raw_chunks):
+        # Contextualize enriches the chunk text with heading breadcrumbs
+        try:
+            ctx = chunker.contextualize(chunk)
+            text = ctx.text
+            headings = getattr(ctx.meta, "headings", None) or []
+        except Exception:
+            text = getattr(chunk, "text", "")
+            headings = []
+
+        # Extract page number from the first provenance entry (best-effort)
+        page_no = None
+        try:
+            doc_items = getattr(chunk.meta, "doc_items", None) or []
+            if doc_items:
+                prov_list = getattr(doc_items[0], "prov", None) or []
+                if prov_list:
+                    page_no = getattr(prov_list[0], "page_no", None)
+        except Exception:
+            pass
+
+        chunks.append({
+            "page": page_no,
+            "type": "text",
+            "text": text,
+            "section_title": headings[0] if len(headings) > 0 else None,
+            "parent_section": headings[1] if len(headings) > 1 else None,
+            "chunk_index": i,
+            "prev_chunk_index": i - 1 if i > 0 else None,
+            "next_chunk_index": i + 1 if i < total - 1 else None,
+        })
+
+    if not chunks:
+        logger.warning(
+            "extract_with_hybrid_chunker: no chunks produced, falling back to extract_relevant()"
+        )
+        return extract_relevant(doc_dict)
+
+    origin = doc_dict.get("origin", {})
+    return {
+        "id": origin.get("binary_hash"),
+        "filename": origin.get("filename"),
+        "mimetype": origin.get("mimetype"),
+        "chunks": chunks,
+    }
+
+
 def extract_relevant(doc_dict: dict) -> dict:
     """
     Given the full export_to_dict() result:

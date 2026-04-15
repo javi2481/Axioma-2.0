@@ -375,6 +375,13 @@ class SearchService:
                 "embedding_dimensions",
                 "allowed_users",
                 "allowed_groups",
+                # HybridChunker section metadata (null for pre-2.0 docs)
+                "document_id",
+                "chunk_index",
+                "section_title",
+                "parent_section",
+                "prev_chunk_index",
+                "next_chunk_index",
             ],
             "size": limit,
         }
@@ -508,8 +515,19 @@ class SearchService:
                     # ACL fields (may be missing for some documents)
                     "allowed_users": source.get("allowed_users", []),
                     "allowed_groups": source.get("allowed_groups", []),
+                    # HybridChunker section metadata
+                    "document_id": source.get("document_id"),
+                    "chunk_index": source.get("chunk_index"),
+                    "section_title": source.get("section_title"),
+                    "parent_section": source.get("parent_section"),
                 }
             )
+
+        # Context expansion: enrich chunks with adjacent sibling text from the same section.
+        # Only active when HYBRID_CHUNKER_ENABLED=true AND CONTEXT_EXPANSION_ENABLED=true.
+        from config.settings import HYBRID_CHUNKER_ENABLED, CONTEXT_EXPANSION_ENABLED
+        if HYBRID_CHUNKER_ENABLED and CONTEXT_EXPANSION_ENABLED:
+            chunks = await self._expand_chunk_contexts(chunks, opensearch_client, get_index_name())
 
         # If query text appears verbatim in one subset of files, prefer those files
         # to avoid broad semantic spillover for unique lookups.
@@ -568,6 +586,98 @@ class SearchService:
             "aggregations": aggregations,
             "total": len(chunks),
         }
+
+    async def _fetch_adjacent_chunks(
+        self,
+        opensearch_client,
+        document_id: str,
+        chunk_indices: list[int],
+        index_name: str,
+    ) -> dict[int, str]:
+        """
+        Fetch specific chunks from OpenSearch by document_id + chunk_index.
+        Returns a dict mapping chunk_index → text for fast lookup.
+        Only called when HYBRID_CHUNKER_ENABLED and CONTEXT_EXPANSION_ENABLED are true.
+        """
+        if not document_id or not chunk_indices:
+            return {}
+        try:
+            query = {
+                "query": {
+                    "bool": {
+                        "filter": [
+                            {"term": {"document_id": document_id}},
+                            {"terms": {"chunk_index": chunk_indices}},
+                        ]
+                    }
+                },
+                "_source": ["chunk_index", "text"],
+                "size": len(chunk_indices) * 2,
+            }
+            result = await opensearch_client.search(index=index_name, body=query)
+            return {
+                hit["_source"]["chunk_index"]: hit["_source"].get("text", "")
+                for hit in result["hits"]["hits"]
+                if "chunk_index" in hit.get("_source", {})
+            }
+        except Exception as exc:
+            logger.warning("_fetch_adjacent_chunks failed", error=str(exc))
+            return {}
+
+    async def _expand_chunk_contexts(
+        self,
+        chunks: list,
+        opensearch_client,
+        index_name: str,
+        window: int = 1,
+    ) -> list:
+        """
+        Enrich each retrieved chunk with the text of its adjacent siblings
+        (prev and next within the same document).
+
+        Only applies to chunks that have a ``chunk_index`` (i.e. ingested with
+        HybridChunker). Legacy chunks (chunk_index=None) are returned unchanged.
+        """
+        enriched = []
+        for chunk in chunks:
+            document_id = chunk.get("document_id")
+            chunk_index = chunk.get("chunk_index")
+
+            if document_id is None or chunk_index is None:
+                enriched.append(chunk)
+                continue
+
+            target_indices = [
+                idx for idx in range(chunk_index - window, chunk_index + window + 1)
+                if idx != chunk_index and idx >= 0
+            ]
+
+            adjacent = await self._fetch_adjacent_chunks(
+                opensearch_client, document_id, target_indices, index_name
+            )
+
+            if not adjacent:
+                enriched.append(chunk)
+                continue
+
+            prev_texts = [
+                adjacent[idx] for idx in sorted(adjacent)
+                if idx < chunk_index and adjacent[idx]
+            ]
+            next_texts = [
+                adjacent[idx] for idx in sorted(adjacent)
+                if idx > chunk_index and adjacent[idx]
+            ]
+
+            expanded_text = "\n\n".join(filter(None, [
+                *prev_texts,
+                chunk["text"],
+                *next_texts,
+            ]))
+
+            enriched.append({**chunk, "text": expanded_text})
+
+        return enriched
 
     async def search(
         self,

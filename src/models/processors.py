@@ -206,8 +206,9 @@ class TaskProcessor:
             get_openrag_config,
         )
         from services.document_service import chunk_texts_for_embeddings
-        from utils.document_processing import extract_relevant
+        from utils.document_processing import extract_relevant, extract_with_hybrid_chunker
         from utils.embedding_fields import get_embedding_field_name, ensure_embedding_field_exists
+        from config.settings import HYBRID_CHUNKER_ENABLED
 
         # Use provided embedding model or configured model.
         # get_embedding_model() returns empty string when Langflow ingest is enabled,
@@ -260,7 +261,10 @@ class TaskProcessor:
             from utils.docling_client import convert_file
 
             full_doc = await convert_file(file_path, httpx_client=clients.docling_http_client)
-            slim_doc = extract_relevant(full_doc)
+            if HYBRID_CHUNKER_ENABLED:
+                slim_doc = extract_with_hybrid_chunker(full_doc)
+            else:
+                slim_doc = extract_relevant(full_doc)
 
         texts = [c["text"] for c in slim_doc["chunks"]]
 
@@ -292,6 +296,12 @@ class TaskProcessor:
                 "file_size": file_size,
                 "connector_type": connector_type,
                 "indexed_time": datetime.datetime.now().isoformat(),
+                # HybridChunker section metadata (None for plain page-based chunks)
+                "section_title": chunk.get("section_title"),
+                "parent_section": chunk.get("parent_section"),
+                "chunk_index": chunk.get("chunk_index", i),
+                "prev_chunk_index": chunk.get("prev_chunk_index"),
+                "next_chunk_index": chunk.get("next_chunk_index"),
             }
 
             # Set owner and ACL fields

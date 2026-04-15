@@ -437,6 +437,19 @@ async def async_chat(
         "Got response", response_preview=response_text[:50], response_id=response_id
     )
 
+    # Guardian: fire-and-forget safety/faithfulness evaluation (never blocks response)
+    from config.settings import GUARDIAN_ENABLED
+    if GUARDIAN_ENABLED:
+        from services.guardrail_service import guardrail_service
+        asyncio.create_task(
+            guardrail_service.evaluate_and_log(
+                question=prompt,
+                context=prompt,
+                answer=response_text,
+                trace_id=response_id,
+            )
+        )
+
     # Add assistant response to conversation with response_id, timestamp, and full response object
     assistant_message = {
         "role": "assistant",
@@ -606,6 +619,19 @@ async def async_langflow_chat(
         response_preview=response_text[:50],
         response_id=response_id,
     )
+
+    # Guardian: fire-and-forget safety/faithfulness evaluation (never blocks response)
+    from config.settings import GUARDIAN_ENABLED
+    if GUARDIAN_ENABLED:
+        from services.guardrail_service import guardrail_service
+        asyncio.create_task(
+            guardrail_service.evaluate_and_log(
+                question=prompt,
+                context=prompt,
+                answer=response_text,
+                trace_id=response_id,
+            )
+        )
 
     if store_conversation:
         # Add assistant response to conversation with response_id and timestamp

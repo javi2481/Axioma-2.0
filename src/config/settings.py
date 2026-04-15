@@ -77,6 +77,25 @@ IBM_SESSION_COOKIE_NAME = os.getenv("IBM_SESSION_COOKIE_NAME", "ibm-openrag-sess
 IBM_CREDENTIALS_HEADER = os.getenv("IBM_CREDENTIALS_HEADER", "X-IBM-LH-Credentials")
 DOCLING_OCR_ENGINE = os.getenv("DOCLING_OCR_ENGINE")
 
+# Granite 4.0 H-Tiny — LLM router
+GRANITE_MODEL = os.getenv("GRANITE_MODEL", "granite4.0-htiny:instruct")
+GRANITE_ENDPOINT = os.getenv("GRANITE_ENDPOINT", "")  # Falls back to OLLAMA_ENDPOINT
+GRANITE_BACKEND = os.getenv("GRANITE_BACKEND", "ollama")  # "ollama" | "sglang" (Phase 3)
+
+# Granite Guardian — async guardrail
+GUARDIAN_ENABLED = os.getenv("GUARDIAN_ENABLED", "false").lower() in ("true", "1", "yes")
+GUARDIAN_MODEL = os.getenv("GUARDIAN_MODEL", "granite-guardian-3.3:8b")
+GUARDIAN_SAMPLE_RATE = get_env_float("GUARDIAN_SAMPLE_RATE", 1.0)
+
+# HybridChunker (docling SDK) — richer section-aware chunking
+HYBRID_CHUNKER_ENABLED = os.getenv("HYBRID_CHUNKER_ENABLED", "false").lower() in ("true", "1", "yes")
+CONTEXT_EXPANSION_ENABLED = os.getenv("CONTEXT_EXPANSION_ENABLED", "false").lower() in ("true", "1", "yes")
+
+# Langfuse — service-layer access (scores from guardrail + Ragas)
+LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY", "")
+LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY", "")
+LANGFUSE_HOST = os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
+
 IBM_AUTH_ENABLED = os.getenv("IBM_AUTH_ENABLED", "false").lower() in ("true", "1", "yes")
 
 # Ingestion configuration
@@ -198,6 +217,12 @@ INDEX_BODY = {
             "modified_time": {"type": "date"},
             "indexed_time": {"type": "date"},
             "metadata": {"type": "object"},
+            # HybridChunker section metadata (populated when HYBRID_CHUNKER_ENABLED=true)
+            "section_title": {"type": "keyword"},
+            "parent_section": {"type": "keyword"},
+            "chunk_index": {"type": "integer"},
+            "prev_chunk_index": {"type": "integer"},
+            "next_chunk_index": {"type": "integer"},
         }
     },
 }
@@ -658,6 +683,19 @@ class AppClients:
                 logger.error("Failed to close Langflow client", error=str(e))
             finally:
                 self.langflow_client = None
+
+        # Cleanup LLM router and Guardian service HTTP clients
+        try:
+            from services.llm_router import llm_router
+            await llm_router.cleanup()
+        except Exception as e:
+            logger.warning("Failed to cleanup LLMRouter", error=str(e))
+
+        try:
+            from services.guardrail_service import guardrail_service
+            await guardrail_service.cleanup()
+        except Exception as e:
+            logger.warning("Failed to cleanup GuardrailService", error=str(e))
 
     async def close(self):
         """Alias for cleanup() for convenience."""
