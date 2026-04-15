@@ -1509,14 +1509,14 @@ async def create_app():
     from rate_limit_middleware import RateLimitMiddleware
     from services.semantic_cache import SemanticCache
     from config.settings import (
-        REDIS_URL,
+        VALKEY_URL,
         LANGCACHE_ENABLED,
         LANGCACHE_SIMILARITY_THRESHOLD,
         LANGCACHE_TTL,
     )
 
     semantic_cache = (
-        SemanticCache(REDIS_URL, LANGCACHE_SIMILARITY_THRESHOLD, LANGCACHE_TTL)
+        SemanticCache(VALKEY_URL, LANGCACHE_SIMILARITY_THRESHOLD, LANGCACHE_TTL)
         if LANGCACHE_ENABLED
         else None
     )
@@ -1552,7 +1552,7 @@ async def create_app():
     app.state.background_tasks = set()
 
     # Rate limiting — must be added before other middleware (LIFO execution order)
-    app.state.rate_limiter = RateLimiter(redis_url=REDIS_URL)
+    app.state.rate_limiter = RateLimiter(valkey_url=VALKEY_URL)
     app.add_middleware(RateLimitMiddleware)
 
     try:

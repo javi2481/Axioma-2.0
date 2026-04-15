@@ -1,5 +1,7 @@
 # Design: Rate Limiting for API
 
+> **Nota de migración (2026-04-15):** El backend fue migrado de Redis (SSPL) a **Valkey 9.x** (BSD-3-Clause, Linux Foundation). El diseño y las decisiones arquitectónicas documentadas aquí permanecen válidos — Valkey es protocolo-compatible con Redis. Ver `docker-compose.yml` y `src/services/rate_limiter.py` para el estado actual.
+
 ## Technical Approach
 
 Implement rate limiting as a FastAPI dependency that runs BEFORE the `get_api_key_user_async` dependency. This ensures rate limits are checked before authentication. The approach uses a middleware pattern with Redis as primary storage and in-memory fallback.

@@ -200,16 +200,16 @@ services:
       # - DEFAULT_FOLDER_NAME=OpenRAG
       - HIDE_GETTING_STARTED_PROGRESS=true
 
-  redis:
-    image: redis/redis-stack:7-latest
-    container_name: axioma_redis
+  valkey:
+    image: valkey/valkey-bundle:latest
+    container_name: axioma_valkey
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "valkey-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 3

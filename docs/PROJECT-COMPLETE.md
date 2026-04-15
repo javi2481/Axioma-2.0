@@ -41,7 +41,7 @@ El código base incluye todo esto listo para usar:
 | **API Keys** | ✅ | Autenticación para clientes API |
 | **Conectores** | ✅ | OneDrive, SharePoint, S3, IBM COS |
 | **Langfuse** | ✅ | Observabilidad y evaluación — variables configuradas |
-| **Rate Limiting** | ✅ | Redis + fallback en memoria. Tiers: free/pro/enterprise |
+| **Rate Limiting** | ✅ | Valkey 9.x + fallback en memoria. Tiers: free/pro/enterprise |
 
 ### Tu trabajo como desarrollador
 
@@ -59,7 +59,7 @@ Tu misión se limita a:
 | Backend | Python 3.13+, FastAPI, uvicorn, structlog |
 | Frontend | Next.js, TypeScript, React |
 | Database | OpenSearch 3.x (search + vector store) |
-| Cache / Rate Limit | Redis 7 (con fallback en memoria) |
+| Cache / Rate Limit | Valkey 9.x (con fallback en memoria) |
 | AI Pipeline | Langflow |
 | Auth | OAuth 2.0, OIDC, JWT (RS256), API Keys |
 | Containers | Docker + Compose |
@@ -91,7 +91,7 @@ axioma-2.0/
 │   │   ├── chat_service.py       # Chat RAG
 │   │   ├── document_service.py   # Ingestión
 │   │   ├── api_key_service.py    # API Keys
-│   │   ├── rate_limiter.py       # Rate limiting (Redis + fallback en memoria)
+│   │   ├── rate_limiter.py       # Rate limiting (Valkey + fallback en memoria)
 │   │   └── langflow_mcp_service.py
 │   ├── connectors/               # Conectores externos
 │   │   ├── base.py              # BaseConnector abstract
@@ -183,13 +183,13 @@ User → ChatService → SearchService (context) → Langflow → Response
 
 ### ✅ Rate Limiting
 - [x] Middleware Starlette (`rate_limit_middleware.py`) — intercepta `/v1/*`
-- [x] Servicio Redis con fallback en memoria (`services/rate_limiter.py`)
+- [x] Servicio Valkey con fallback en memoria (`services/rate_limiter.py`)
 - [x] Tiers: free (100 req/min), pro (1000 req/min), enterprise (ilimitado)
 - [x] Headers `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
 - [x] 13 tests unitarios
 
 ### ✅ Infra & DevOps
-- [x] Docker Compose (incluye Redis 7 con healthcheck)
+- [x] Docker Compose (incluye Valkey 9.x con healthcheck)
 - [x] Makefile automation
 - [x] OpenSearch security
 - [x] Docling integration
@@ -244,7 +244,7 @@ Authorization: Bearer orag_xxxxxxxxxxxx
 | Enterprise | Ilimitado | `X-RateLimit-Remaining: unlimited` |
 
 Responde `429 Too Many Requests` con `Retry-After` cuando se excede el límite.
-Store primario: Redis. Fallback automático a memoria si Redis no está disponible.
+Store primario: Valkey 9.x. Fallback automático a memoria si Valkey no está disponible.
 
 ---
 
@@ -295,7 +295,7 @@ Store primario: Redis. Fallback automático a memoria si Redis no está disponib
 
 | Gap | Solución |
 |-----|----------|
-| Caching | Redis LangCache (futuro) |
+| Caching | Valkey LangCache (futuro) |
 | Analytics | ✅ Langfuse configurado — observabilidad y evaluación activas |
 | Rate Limiting | ✅ Implementado — `src/rate_limit_middleware.py` |
 | Multi-language | granite-embedding + reranker |
@@ -325,7 +325,7 @@ Store primario: Redis. Fallback automático a memoria si Redis no está disponib
 ### Q3: Scale B2C
 
 ```
-[ ]    Redis LangCache
+[ ]    Valkey LangCache
 [ ]    Rate plans (Free/Pro/Enterprise)
 [ ]    Analytics dashboard
 [ ]    Multi-language support
@@ -349,19 +349,19 @@ Store primario: Redis. Fallback automático a memoria si Redis no está disponib
 | Archivo | Descripción |
 |---------|-------------|
 | `src/rate_limit_middleware.py` | Middleware Starlette — intercepta `/v1/*`, extrae API key, aplica límites |
-| `src/services/rate_limiter.py` | Servicio Redis con fallback en memoria y cache de tiers (TTL 5 min) |
+| `src/services/rate_limiter.py` | Servicio Valkey con fallback en memoria y cache de tiers (TTL 5 min) |
 | `tests/unit/test_rate_limiter.py` | 13 tests unitarios (TDD) |
-| `src/config/settings.py` | Variables `REDIS_URL`, `RATE_LIMIT_ENABLED`, `RATE_LIMIT_WINDOW`, `RATE_LIMITS` |
-| `docker-compose.yml` | Servicio `redis:7-alpine` con healthcheck y volumen persistente |
+| `src/config/settings.py` | Variables `VALKEY_URL`, `RATE_LIMIT_ENABLED`, `RATE_LIMIT_WINDOW`, `RATE_LIMITS` |
+| `docker-compose.yml` | Servicio `valkey/valkey-bundle:latest` con healthcheck y volumen persistente |
 | `pyproject.toml` | Dependencia `redis[asyncio]>=5.0.0` |
 
 ### Diseño
 
 - **Extracción del API key**: header `X-API-Key` o `Authorization: Bearer orag_...`
-- **Redis key**: `rate_limit:{sha256(api_key)}` — nunca el key en crudo
+- **Valkey key**: `rate_limit:{sha256(api_key)}` — nunca el key en crudo
 - **Tier resolution**: memoria (TTL 5 min) → OpenSearch → default `free`
-- **Fallback**: si Redis no responde, counters en memoria (single-process)
-- **Enterprise**: cortocircuita antes de tocar Redis (siempre permitido)
+- **Fallback**: si Valkey no responde, counters en memoria (single-process)
+- **Enterprise**: cortocircuita antes de tocar Valkey (siempre permitido)
 
 ---
 

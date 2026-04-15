@@ -1,5 +1,7 @@
 # API Rate Limiting Specification
 
+> **Nota de migración (2026-04-15):** El backend fue migrado de Redis (SSPL) a **Valkey 9.x** (BSD-3-Clause, Linux Foundation). Los requerimientos y escenarios documentados aquí siguen vigentes. Las referencias a "Redis" en los escenarios aplican a Valkey.
+
 ## Purpose
 
 This specification defines the rate limiting behavior for the OpenRAG public API. The system MUST protect against abuse and enable cost control through configurable request limits per API key.

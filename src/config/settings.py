@@ -56,7 +56,7 @@ GOOGLE_OAUTH_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID")
 GOOGLE_OAUTH_CLIENT_SECRET = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET")
 
 # Rate limiting
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+VALKEY_URL = os.getenv("VALKEY_URL", "redis://localhost:6379/0")
 RATE_LIMIT_ENABLED = os.getenv("RATE_LIMIT_ENABLED", "true").lower() in ("true", "1", "yes")
 RATE_LIMIT_WINDOW = get_env_int("RATE_LIMIT_WINDOW", 60)
 RATE_LIMITS = {

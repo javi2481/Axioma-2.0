@@ -3,6 +3,7 @@ Unit tests for RateLimiter service.
 
 TDD: these tests were written BEFORE the implementation.
 Each test describes the expected behavior of src/services/rate_limiter.py.
+Backend: Valkey (BSD-3-Clause, drop-in replacement for Redis).
 """
 import hashlib
 import time
@@ -18,8 +19,8 @@ def _hash(api_key: str) -> str:
     return hashlib.sha256(api_key.encode()).hexdigest()
 
 
-def _make_redis_mock(incr_return: int, ttl_return: int = 55):
-    """Return an AsyncMock that behaves like a Redis client."""
+def _make_valkey_mock(incr_return: int, ttl_return: int = 55):
+    """Return an AsyncMock that behaves like a Valkey client."""
     mock = AsyncMock()
     mock.incr.return_value = incr_return
     mock.expire.return_value = True
@@ -34,7 +35,7 @@ def _make_redis_mock(incr_return: int, ttl_return: int = 55):
 @pytest.fixture
 def rate_limiter():
     from services.rate_limiter import RateLimiter
-    return RateLimiter(redis_url="redis://localhost:6379/0")
+    return RateLimiter(valkey_url="redis://localhost:6379/0")
 
 
 # ─────────────────────────────────────────────────────────────
@@ -44,7 +45,7 @@ def rate_limiter():
 @pytest.mark.asyncio
 async def test_allows_request_within_free_limit(rate_limiter):
     """Request #50 with free tier (limit=100) should be allowed."""
-    redis_mock = _make_redis_mock(incr_return=50)
+    redis_mock = _make_valkey_mock(incr_return=50)
     rate_limiter._redis = redis_mock
 
     allowed, remaining, reset_ts = await rate_limiter.check_and_increment(
@@ -59,7 +60,7 @@ async def test_allows_request_within_free_limit(rate_limiter):
 @pytest.mark.asyncio
 async def test_blocks_request_over_free_limit(rate_limiter):
     """Request #101 with free tier (limit=100) should be blocked."""
-    redis_mock = _make_redis_mock(incr_return=101)
+    redis_mock = _make_valkey_mock(incr_return=101)
     rate_limiter._redis = redis_mock
 
     allowed, remaining, _ = await rate_limiter.check_and_increment(
@@ -73,7 +74,7 @@ async def test_blocks_request_over_free_limit(rate_limiter):
 @pytest.mark.asyncio
 async def test_blocks_request_exactly_at_limit_plus_one(rate_limiter):
     """Request #101 is blocked; request #100 is the last allowed one."""
-    redis_mock = _make_redis_mock(incr_return=100)
+    redis_mock = _make_valkey_mock(incr_return=100)
     rate_limiter._redis = redis_mock
 
     allowed, remaining, _ = await rate_limiter.check_and_increment(
@@ -87,7 +88,7 @@ async def test_blocks_request_exactly_at_limit_plus_one(rate_limiter):
 @pytest.mark.asyncio
 async def test_pro_tier_allows_up_to_1000(rate_limiter):
     """Request #999 with pro tier (limit=1000) should be allowed."""
-    redis_mock = _make_redis_mock(incr_return=999)
+    redis_mock = _make_valkey_mock(incr_return=999)
     rate_limiter._redis = redis_mock
 
     allowed, remaining, _ = await rate_limiter.check_and_increment(
@@ -100,8 +101,8 @@ async def test_pro_tier_allows_up_to_1000(rate_limiter):
 
 @pytest.mark.asyncio
 async def test_enterprise_tier_is_always_unlimited(rate_limiter):
-    """Enterprise tier is never rate limited, regardless of Redis state."""
-    # Redis should NOT even be called for enterprise
+    """Enterprise tier is never rate limited, regardless of Valkey state."""
+    # Valkey should NOT even be called for enterprise
     rate_limiter._redis = AsyncMock()
 
     allowed, remaining, reset_ts = await rate_limiter.check_and_increment(
@@ -117,7 +118,7 @@ async def test_enterprise_tier_is_always_unlimited(rate_limiter):
 @pytest.mark.asyncio
 async def test_remaining_never_goes_below_zero(rate_limiter):
     """Remaining should be 0, never negative, even when far over limit."""
-    redis_mock = _make_redis_mock(incr_return=500)  # way over free limit of 100
+    redis_mock = _make_valkey_mock(incr_return=500)  # way over free limit of 100
     rate_limiter._redis = redis_mock
 
     _, remaining, _ = await rate_limiter.check_and_increment(
@@ -129,9 +130,9 @@ async def test_remaining_never_goes_below_zero(rate_limiter):
 
 @pytest.mark.asyncio
 async def test_counter_key_uses_sha256_hash_not_raw_key(rate_limiter):
-    """Redis key must be rate_limit:{sha256(api_key)}, never the raw key."""
+    """Valkey key must be rate_limit:{sha256(api_key)}, never the raw key."""
     api_key = "orag_secretkey999"
-    redis_mock = _make_redis_mock(incr_return=1)
+    redis_mock = _make_valkey_mock(incr_return=1)
     rate_limiter._redis = redis_mock
 
     await rate_limiter.check_and_increment(api_key=api_key, tier="free", window=60)
@@ -142,8 +143,8 @@ async def test_counter_key_uses_sha256_hash_not_raw_key(rate_limiter):
 
 @pytest.mark.asyncio
 async def test_sets_ttl_on_first_request(rate_limiter):
-    """On the first request (incr returns 1), TTL must be set on the Redis key."""
-    redis_mock = _make_redis_mock(incr_return=1)
+    """On the first request (incr returns 1), TTL must be set on the Valkey key."""
+    redis_mock = _make_valkey_mock(incr_return=1)
     rate_limiter._redis = redis_mock
 
     await rate_limiter.check_and_increment(
@@ -157,8 +158,8 @@ async def test_sets_ttl_on_first_request(rate_limiter):
 
 @pytest.mark.asyncio
 async def test_does_not_reset_ttl_on_subsequent_requests(rate_limiter):
-    """On request #2+ (incr > 1), expire must NOT be called again."""
-    redis_mock = _make_redis_mock(incr_return=5)
+    """On request #2+ (incr > 1), expire must NOT be called again on Valkey."""
+    redis_mock = _make_valkey_mock(incr_return=5)
     rate_limiter._redis = redis_mock
 
     await rate_limiter.check_and_increment(
@@ -169,14 +170,14 @@ async def test_does_not_reset_ttl_on_subsequent_requests(rate_limiter):
 
 
 # ─────────────────────────────────────────────────────────────
-# Tests: in-memory fallback when Redis is unavailable
+# Tests: in-memory fallback when Valkey is unavailable
 # ─────────────────────────────────────────────────────────────
 
 @pytest.mark.asyncio
 async def test_falls_back_to_memory_when_redis_raises(rate_limiter):
-    """If Redis raises an exception, fall back to in-memory counter."""
+    """If Valkey raises an exception, fall back to in-memory counter."""
     redis_mock = AsyncMock()
-    redis_mock.incr.side_effect = ConnectionError("Redis unavailable")
+    redis_mock.incr.side_effect = ConnectionError("Valkey unavailable")
     rate_limiter._redis = redis_mock
 
     allowed, remaining, reset_ts = await rate_limiter.check_and_increment(
@@ -192,7 +193,7 @@ async def test_falls_back_to_memory_when_redis_raises(rate_limiter):
 async def test_memory_fallback_tracks_count_across_calls(rate_limiter):
     """In-memory fallback must accumulate requests correctly."""
     redis_mock = AsyncMock()
-    redis_mock.incr.side_effect = ConnectionError("Redis unavailable")
+    redis_mock.incr.side_effect = ConnectionError("Valkey unavailable")
     rate_limiter._redis = redis_mock
 
     api_key = "orag_fallbackkey"
@@ -214,7 +215,7 @@ async def test_memory_fallback_tracks_count_across_calls(rate_limiter):
 async def test_memory_fallback_blocks_when_limit_exceeded(rate_limiter):
     """In-memory fallback must block when free limit (100) is exceeded."""
     redis_mock = AsyncMock()
-    redis_mock.incr.side_effect = ConnectionError("Redis unavailable")
+    redis_mock.incr.side_effect = ConnectionError("Valkey unavailable")
     rate_limiter._redis = redis_mock
 
     api_key = "orag_heavyuser"

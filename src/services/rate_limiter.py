@@ -1,8 +1,8 @@
 """
 Rate limiter service for Axioma 2.0 public API.
 
-Uses Redis as primary counter store with automatic in-memory fallback
-when Redis is unavailable. Tier-based limits: free/pro/enterprise.
+Uses Valkey as primary counter store with automatic in-memory fallback
+when Valkey is unavailable. Tier-based limits: free/pro/enterprise.
 
 Counter key format: rate_limit:{sha256(api_key)}
 """
@@ -20,14 +20,14 @@ class RateLimiter:
     Per-API-key rate limiter backed by Redis with in-memory fallback.
 
     Usage:
-        limiter = RateLimiter(redis_url="redis://localhost:6379/0")
+        limiter = RateLimiter(valkey_url="redis://localhost:6379/0")
         allowed, remaining, reset_ts = await limiter.check_and_increment(
             api_key="orag_...", tier="free", window=60
         )
     """
 
-    def __init__(self, redis_url: str):
-        self._redis_url = redis_url
+    def __init__(self, valkey_url: str):
+        self._redis_url = valkey_url
         self._redis = None
         # In-memory fallback: {key_hash: (count, window_start_ts)}
         self._memory_counters: dict = {}
@@ -133,7 +133,7 @@ class RateLimiter:
 
         except Exception as exc:
             logger.warning(
-                "Redis unavailable, falling back to in-memory rate limiting",
+                "Valkey unavailable, falling back to in-memory rate limiting",
                 error=str(exc),
             )
             return self._check_memory(key_hash, limit, window)

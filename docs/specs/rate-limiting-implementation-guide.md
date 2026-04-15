@@ -3,6 +3,8 @@
 > Technical guide to implement rate limiting for Axioma 2.0
 > Based on Starlette/FastAPI with Redis backend
 > Last updated: 2026-04-13
+>
+> **Nota de migración (2026-04-15):** El backend fue migrado de Redis (SSPL) a **Valkey 9.x** (BSD-3-Clause, Linux Foundation). Los ejemplos de código en esta guía usan `redis-py`, que es protocolo-compatible con Valkey sin cambios.
 
 ---
 

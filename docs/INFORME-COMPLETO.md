@@ -154,7 +154,7 @@ En términos simples: **Es un motor de búsqueda inteligente con IA que permite 
 
 | Feature | Estado | Cómo resolverlo |
 |---------|--------|-----------------|
-| **Rate Limiting** | ✅ Implementado | `src/rate_limit_middleware.py` + Redis |
+| **Rate Limiting** | ✅ Implementado | `src/rate_limit_middleware.py` + Valkey |
 | **White-label** | 🔴 Por implementar | Frontend: Vercel v0 + Next.js |
 
 ### Lo que parece "faltar" pero ya está resuelto (solo configuración)
@@ -210,7 +210,7 @@ En términos simples: **Es un motor de búsqueda inteligente con IA que permite 
 
 | Feature | Estado | Descripción |
 |---------|--------|-------------|
-| **Rate Limiting** | ✅ Implementado | Redis + Starlette middleware + fallback en memoria |
+| **Rate Limiting** | ✅ Implementado | Valkey 9.x + Starlette middleware + fallback en memoria |
 | **White-label** | 🔴 Por implementar | Frontend con Vercel v0 |
 
 ### Configuración (No requiere código)
@@ -239,7 +239,7 @@ En términos simples: **Es un motor de búsqueda inteligente con IA que permite 
 - [ ] White-label ← Código Vercel v0
 
 ### Q3: Scale B2C
-- [ ] Redis Cache (opcional)
+- [ ] Valkey Cache (opcional)
 - [ ] Rate Plans
 - [x] Analytics Dashboard (Langfuse — configurado)
 - [ ] Multi-language (config Granite)

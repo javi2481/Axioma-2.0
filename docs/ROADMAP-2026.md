@@ -18,7 +18,7 @@
 | OAuth, OIDC, API Keys |
 | Conectores (OneDrive, S3, etc) |
 | Langfuse (analíticas) |
-| **Rate Limiting (Redis + fallback en memoria)** |
+| **Rate Limiting (Valkey + fallback en memoria)** |
 
 **Tu trabajo:** Ensamblar, configurar y personalizar. El código está completo.
 
@@ -41,7 +41,7 @@
 | API Keys | ✅ | Gestión de claves para API pública |
 | Conectores | ✅ | OneDrive, SharePoint, S3, IBM COS |
 | Langfuse | ✅ | Observabilidad y evaluación — variables configuradas |
-| **Rate Limiting** | ✅ | Redis + fallback en memoria. Tiers: free/pro/enterprise |
+| **Rate Limiting** | ✅ | Valkey 9.x + fallback en memoria. Tiers: free/pro/enterprise |
 
 ### Tu trabajo como desarrollador
 
@@ -69,7 +69,7 @@
 | Backend | Python 3.13+, FastAPI, uvicorn, structlog |
 | Frontend | Next.js, TypeScript, React |
 | Database | OpenSearch 3.x (search + vector store) |
-| Cache / Rate Limit | Redis 7 (con fallback en memoria) |
+| Cache / Rate Limit | Valkey 9.x (con fallback en memoria) |
 | AI Pipeline | Langflow |
 | Auth | OAuth 2.0, OIDC, JWT (RS256), API Keys |
 | Containers | Docker + Compose |
@@ -156,7 +156,7 @@
 | Servicio | `src/services/rate_limiter.py` | ✅ |
 | Tests | `tests/unit/test_rate_limiter.py` | ✅ |
 | Config | `src/config/settings.py` | ✅ |
-| Redis | `docker-compose.yml` | ✅ |
+| Valkey | `docker-compose.yml` | ✅ |
 | Dependencia | `pyproject.toml` (`redis[asyncio]>=5.0`) | ✅ |
 
 ### 🟡 PRIORIDAD MEDIA (Q2-Q3 2026)
@@ -172,7 +172,7 @@
 
 | # | Feature | Estado | Descripción |
 |---|---------|--------|-------------|
-| 8 | Redis Cache (B2C) | ❌ | Para alta concurrencia y reducir costos LLM |
+| 8 | Valkey Cache (B2C) | ❌ | Para alta concurrencia y reducir costos LLM |
 | 9 | Multi-language RAG | ⚠️ | Configurar granite-embedding + reranker |
 | 10 | Rate Plans (Tiers) | ❌ | Free/Pro/Enterprise por tiers |
 
@@ -191,9 +191,9 @@
 
 **Responsable:** Backend Team  
 **Entregables:**
-- ✅ Middleware de rate limiting (Redis + Starlette + fallback en memoria)
+- ✅ Middleware de rate limiting (Valkey + Starlette + fallback en memoria)
 - ✅ Tests unitarios completos (13 tests)
-- ✅ Redis en docker-compose con healthcheck
+- ✅ Valkey en docker-compose con healthcheck
 - ✅ `docs/MCP-GUIDE.md` — guía para conectar Cursor y Claude Desktop via MCP
 - ✅ Swagger: título "Axioma API", descripción, tags, summaries en los 16 endpoints públicos
 
@@ -217,7 +217,7 @@
 ### Q3 2026: Scale B2C
 
 ```
-[ ]    Redis LangCache
+[ ]    Valkey LangCache
 [ ]    Rate plans (Free/Pro/Enterprise)
 [x]    Analytics dashboard (Langfuse — configurado)
 [ ]    Multi-language support
@@ -450,6 +450,7 @@ Para clientes enterprise con VMware/baremetal ya existente: AMD MI300 también e
 | 2026-04-13 | Actualizado roadmap con 90% resuelto insight |
 | 2026-04-14 | Rate Limiting implementado: middleware, servicio Redis, 13 tests unitarios |
 | 2026-04-14 | Redis agregado a docker-compose y pyproject.toml |
+| 2026-04-15 | Migración Redis (SSPL) → Valkey 9.x (BSD-3-Clause): docker-compose, settings, rate_limiter, tests |
 | 2026-04-14 | Tests pre-existentes corregidos (encryption, opensearch_security_setup) |
 | 2026-04-14 | Langfuse marcado como configurado y activo |
 | 2026-04-14 | docs/MCP-GUIDE.md: guía completa para conectar Cursor y Claude Desktop via MCP |

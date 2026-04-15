@@ -1,5 +1,7 @@
 # Tasks: Rate Limiting for API
 
+> **Nota de migración (2026-04-15):** Implementación completada con **Valkey 9.x** (BSD-3-Clause) en lugar de Redis (SSPL). Las tasks están cerradas. El historial refleja las decisiones originales de diseño.
+
 ## Phase 1: Foundation / Configuration
 
 - [ ] 1.1 Add RATE_LIMITS config to `config/settings.py` (free: 100, pro: 1000, enterprise: None)
