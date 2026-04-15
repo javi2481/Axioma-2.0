@@ -12,6 +12,9 @@ MAX_EMBED_RETRIES = 3
 EMBED_RETRY_INITIAL_DELAY = 1.0
 EMBED_RETRY_MAX_DELAY = 8.0
 
+# RRF pipeline ID — must match the one created in main.py
+RRF_PIPELINE_ID = "rrf-hybrid-search"
+
 
 class SearchService:
     def __init__(self, session_manager=None):
@@ -299,18 +302,15 @@ class SearchService:
                 filter_types=[type(f).__name__ for f in all_filters]
             )
 
-            # Hybrid search query structure (semantic + keyword)
-            # Use dis_max to pick best score across multiple embedding fields
-            query_block = {
+            # Hybrid search query (neural-search plugin) with RRF normalization.
+            # The pipeline applies Reciprocal Rank Fusion across sub-query ranked lists,
+            # replacing manual boost weights with a mathematically stable rank fusion.
+            # Filters are pushed into each sub-query so DLS still applies correctly.
+            filter_clause = {"bool": {"filter": all_filters}} if all_filters else None
+
+            bm25_sub_query: dict = {
                 "bool": {
                     "should": [
-                        {
-                            "dis_max": {
-                                "tie_breaker": 0.0,  # Take only the best match, no blending
-                                "boost": 0.7,         # 70% weight for semantic search
-                                "queries": knn_queries
-                            }
-                        },
                         {
                             "multi_match": {
                                 "query": query,
@@ -318,26 +318,36 @@ class SearchService:
                                 "type": "best_fields",
                                 "operator": "or",
                                 "fuzziness": "AUTO:4,7",
-                                "boost": 0.3,  # 30% weight for keyword search
                             }
                         },
                         {
-                            # Prefix fallback for partial input (e.g. "vita" -> "vitamin").
-                            # Avoid bool_prefix here because our current mappings are:
-                            # - text: standard "text" (not search_as_you_type / edge-ngram)
-                            # - filename: "keyword"
-                            # match_phrase_prefix with a bounded expansion is safer.
+                            # Prefix fallback — match_phrase_prefix is safe with
+                            # standard text mappings (no edge-ngram needed).
                             "match_phrase_prefix": {
                                 "text": {
                                     "query": query,
                                     "max_expansions": 50,
-                                    "boost": 0.25,
                                 }
                             }
                         },
                     ],
                     "minimum_should_match": 1,
-                    "filter": all_filters,
+                    **({"filter": all_filters} if all_filters else {}),
+                }
+            }
+
+            # KNN sub-queries — one per embedding model, filters pushed inside
+            knn_sub_queries = []
+            for knn_q in knn_queries:
+                field, params = next(iter(knn_q["knn"].items()))
+                knn_entry: dict = {"vector": params["vector"], "k": params["k"], "num_candidates": params["num_candidates"]}
+                if all_filters:
+                    knn_entry["filter"] = {"bool": {"filter": all_filters}}
+                knn_sub_queries.append({"knn": {field: knn_entry}})
+
+            query_block = {
+                "hybrid": {
+                    "queries": [bm25_sub_query, *knn_sub_queries]
                 }
             }
 
@@ -373,16 +383,14 @@ class SearchService:
         if not is_wildcard_match_all and score_threshold > 0:
             search_body["min_score"] = score_threshold
 
-        # Prepare fallback search body without num_candidates for clusters that don't support it
+        # Prepare fallback search body without num_candidates for clusters that don't support it.
+        # Also used as graceful degradation if the RRF pipeline is unavailable.
         fallback_search_body = None
         if not is_wildcard_match_all:
             try:
                 fallback_search_body = copy.deepcopy(search_body)
-                knn_query_blocks = (
-                    fallback_search_body["query"]["bool"]["should"][0]["dis_max"]["queries"]
-                )
-                for query_candidate in knn_query_blocks:
-                    knn_section = query_candidate.get("knn")
+                for knn_sub in fallback_search_body["query"]["hybrid"]["queries"][1:]:
+                    knn_section = knn_sub.get("knn")
                     if isinstance(knn_section, dict):
                         for params in knn_section.values():
                             if isinstance(params, dict):
@@ -408,7 +416,10 @@ class SearchService:
         from opensearchpy.exceptions import RequestError
         from utils.opensearch_utils import OpenSearchDiskSpaceError, is_disk_space_error, DISK_SPACE_ERROR_MESSAGE
 
-        search_params = {"terminate_after": 0}
+        # Include RRF pipeline for hybrid queries; wildcard match_all doesn't need it
+        search_params: dict = {"terminate_after": 0}
+        if not is_wildcard_match_all:
+            search_params["search_pipeline"] = RRF_PIPELINE_ID
 
         try:
             index_name = get_index_name()
@@ -426,10 +437,15 @@ class SearchService:
                 raise OpenSearchDiskSpaceError(DISK_SPACE_ERROR_MESSAGE) from e
             if (
                 fallback_search_body is not None
-                and "unknown field [num_candidates]" in error_message.lower()
+                and (
+                    "unknown field [num_candidates]" in error_message.lower()
+                    or "unknown query [hybrid]" in error_message.lower()
+                    or "search_pipeline" in error_message.lower()
+                )
             ):
                 logger.warning(
-                    "OpenSearch cluster does not support num_candidates; retrying without it"
+                    "OpenSearch hybrid/RRF not supported; retrying without num_candidates",
+                    error=error_message,
                 )
                 try:
                     results = await opensearch_client.search(

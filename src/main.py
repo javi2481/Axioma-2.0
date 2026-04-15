@@ -216,6 +216,53 @@ async def _ensure_opensearch_index():
         # The service can still function, document operations might fail later
 
 
+RRF_PIPELINE_ID = "rrf-hybrid-search"
+
+
+async def ensure_rrf_search_pipeline(os_client) -> None:
+    """
+    Create the RRF hybrid search pipeline if it doesn't exist.
+
+    Uses the neural-search normalization-processor with RRF technique
+    (rank_constant=60 per OpenSearch recommendation). Falls back silently
+    if the neural-search plugin is unavailable or OpenSearch version < 3.x.
+    """
+    pipeline_body = {
+        "description": "RRF hybrid search — BM25 + KNN via Reciprocal Rank Fusion",
+        "phase_results_processors": [
+            {
+                "normalization-processor": {
+                    "normalization": {
+                        "technique": "rrf",
+                        "parameters": {"rank_constant": 60},
+                    },
+                    "combination": {
+                        "technique": "rrf",
+                    },
+                }
+            }
+        ],
+    }
+    try:
+        await os_client.transport.perform_request(
+            "GET", f"/_search/pipeline/{RRF_PIPELINE_ID}"
+        )
+        logger.info("RRF search pipeline already exists", pipeline_id=RRF_PIPELINE_ID)
+    except Exception:
+        try:
+            await os_client.transport.perform_request(
+                "PUT",
+                f"/_search/pipeline/{RRF_PIPELINE_ID}",
+                body=pipeline_body,
+            )
+            logger.info("Created RRF search pipeline", pipeline_id=RRF_PIPELINE_ID)
+        except Exception as exc:
+            logger.warning(
+                "Could not create RRF search pipeline — hybrid search will use dis_max fallback",
+                error=str(exc),
+            )
+
+
 async def init_index(opensearch_client=None, admin_username: str = None):
     """Initialize OpenSearch index and security roles"""
     os_client = opensearch_client or clients.opensearch
@@ -343,6 +390,9 @@ async def init_index(opensearch_client=None, admin_username: str = None):
         # Ensure the global OpenSearch client used by alerting points to the
         # same authenticated/admin-capable client selected above (including IBM mode).
         await configure_alerting_security()
+
+        # Create RRF hybrid search pipeline (neural-search plugin, OpenSearch 3.x)
+        await ensure_rrf_search_pipeline(os_client)
 
     except Exception as e:
         error_msg = str(e).lower()
