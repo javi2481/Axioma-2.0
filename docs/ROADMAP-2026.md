@@ -418,6 +418,71 @@ Para clientes enterprise con VMware/baremetal ya existente: AMD MI300 también e
 
 ---
 
+## 8. OpenSearch Dashboards — Cuarto de Máquinas (Fase 3)
+
+### Marco Arquitectónico
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  FACHADA          → Frontend Next.js (cliente final)    │
+│  FÁBRICA CEREBROS → Langflow (lógica de IA, agentes)   │
+│  CUARTO MÁQUINAS  → OpenSearch Dashboards (infra/ops)  │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Regla de oro:** Toda decisión de IA (prompts, herramientas, razonamiento, trazas) vive en **Langflow** y se audita en **Langfuse**. OpenSearch Dashboards es solo para infraestructura, seguridad y observabilidad operacional.
+
+### Qué SÍ configurar en Dashboards
+
+| # | Feature | Esfuerzo | Requiere código | Valor |
+|---|---------|----------|-----------------|-------|
+| 1 | **DLS/FLS** — Seguridad multi-tenant | Bajo | ❌ Solo config | Alto — datos empresa A invisibles para empresa B |
+| 2 | **ISM** — Index lifecycle policies | Bajo | ❌ Solo config | Medio — mueve índices inactivos a cold storage |
+| 3 | **Alertas + Monitoreo** | Bajo | ❌ Solo config | Medio — webhook a Slack ante picos de latencia |
+| 4 | **Search Relevance Workbench** | Mínimo | ❌ Solo config | Medio — A/B testing BM25 vs KNN vs Hybrid |
+| 5 | **ML Commons** — Embedding registry | Medio | ❌ Casi config | Medio — gestión centralizada del modelo activo |
+| 6 | **UBI** — User Behavior Insights | Medio | ⚠️ 1 hook Python | Alto — feedback loop real para mejorar retrieval |
+| 7 | **OpenSearch Assistant** | Bajo | ❌ 1 config flag | Bajo — PPL queries en lenguaje natural para DevOps |
+
+**Detalles por ítem:**
+
+- **DLS/FLS**: filtros por `owner`, `allowed_users`, `allowed_groups`. Cada tenant solo ve sus vectores.
+- **ISM**: políticas de ciclo de vida. Índices inactivos > N días → warm → cold. Optimización de costos.
+- **Search Relevance Workbench**: plugin `dashboards-search-relevance`. Comparar pipelines RRF sin tocar producción.
+- **ML Commons**: registrar `granite-embedding-278m-multilingual` y `text-embedding-3-small`. Cambiar modelo activo sin tocar código.
+- **UBI**: plugin `opensearch-project/user-behavior-insights` release 3.0.0.0. Registra qué resultados el usuario abrió vs ignoró — fuente de señal para ajustar RRF.
+- **OpenSearch Assistant**: activar `assistant.chat.enabled: true` en `opensearch_dashboards.yml`. Para el equipo de DevOps: PPL queries, análisis de logs, estado de índices. **Solo uso interno**.
+
+### Anti-patrón: NO usar agentic features de Dashboards
+
+`dashboards-assistant` puede orquestar agentes y ejecutar herramientas. **No hacerlo en Axioma.**
+
+| Si construís... | El problema es... |
+|---|---|
+| Flujos de agentes en Dashboards | Langfuse no puede trazar lo que ocurre adentro |
+| Prompts o herramientas en Dashboards | Arquitectura fragmentada, debugging imposible |
+| Lógica de negocio en Dashboards | Viola la regla: toda IA vive en Langflow |
+
+**Regla:**
+```
+OpenSearch Dashboards → consultas de datos (PPL, DSL), infra, seguridad
+Langflow              → lógica de agentes, herramientas, prompts, razonamiento
+```
+
+### Orden de implementación recomendado
+
+| Prioridad | Item | Cuándo |
+|---|---|---|
+| 1 | DLS/FLS | Q2 2026 — antes de cualquier cliente B2B |
+| 2 | ISM lifecycle | Q2 2026 — junto con DLS/FLS |
+| 3 | Alertas + Monitoreo | Q2 2026 — antes de ir a producción |
+| 4 | Search Relevance Workbench | Q2-Q3 2026 — para validar cambios en search_service.py |
+| 5 | ML Commons embedding registry | Q3 2026 |
+| 6 | UBI plugin | Q3 2026 — cuando haya usuarios reales dando feedback |
+| 7 | OpenSearch Assistant | Q3 2026 — opcional, solo si el equipo ops crece |
+
+---
+
 ## 9. Tech Debt & Known Issues
 
 - [ ] No existe tests de integración con todos los conectores
@@ -470,6 +535,9 @@ Para clientes enterprise con VMware/baremetal ya existente: AMD MI300 también e
 | 2026-04-14 | Q1 2026 completado al 100% |
 | 2026-04-14 | Definidas 3 verticales: B2C SaaS, B2B Cloud, B2B Air-gap |
 | 2026-04-14 | SGLang agregado al roadmap Q4 como motor de inferencia para Vertical 3 |
+| 2026-04-15 | Fase 1 completa: Valkey I/O threading, OpenSearch Hybrid + RRF, Ragas batch eval |
+| 2026-04-15 | Fase 2 completa: LLMRouter, Granite Guardian 3.3, HybridChunker + Context Expansion |
+| 2026-04-16 | OpenSearch Dashboards "cuarto de máquinas" documentado: DLS/FLS, ISM, UBI, alertas, anti-patrón |
 
 ---
 

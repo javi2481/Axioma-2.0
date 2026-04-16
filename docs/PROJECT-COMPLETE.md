@@ -343,8 +343,29 @@ Store primario: Valkey 9.x. Fallback automático a memoria si Valkey no está di
 [ ]    Valkey HEXPIRE per-field TTL para memoria de sesión multi-agente
 [ ]    Multi-agent Langflow + MCP externo (Slack, SQL, Jira)
 [ ]    Grafana AIOps dashboards (FastAPI + OpenSearch + Valkey)
-[ ]    OpenSearch UBI + DLS/FLS compliance multi-tenant
+[ ]    OpenSearch Dashboards — DLS/FLS, ISM, UBI, alertas (ver detalle abajo)
 ```
+
+#### OpenSearch Dashboards — Cuarto de Máquinas
+
+Marco arquitectónico:
+- **Fachada** → Frontend Next.js (cliente final)
+- **Fábrica de cerebros** → Langflow (lógica de IA, agentes)
+- **Cuarto de máquinas** → OpenSearch Dashboards (infra/ops)
+
+**Regla de oro:** Toda IA vive en Langflow. Dashboards es solo para infraestructura y seguridad.
+
+| # | Feature | Código | Prioridad |
+|---|---------|--------|-----------|
+| 1 | DLS/FLS multi-tenant | ❌ Solo config | Q2 2026 — antes de primer cliente B2B |
+| 2 | ISM — index lifecycle | ❌ Solo config | Q2 2026 |
+| 3 | Alertas + Monitoreo (Slack webhook) | ❌ Solo config | Q2 2026 |
+| 4 | Search Relevance Workbench | ❌ Solo config | Q2-Q3 2026 |
+| 5 | ML Commons — embedding registry | ❌ Casi config | Q3 2026 |
+| 6 | UBI — User Behavior Insights | ⚠️ 1 hook en search_service.py | Q3 2026 |
+| 7 | OpenSearch Assistant (DevOps) | ❌ 1 config flag | Q3 2026 |
+
+**Anti-patrón:** NO construir flujos de agentes o prompts en Dashboards — fragmenta arquitectura y rompe trazabilidad Langfuse.
 
 ### Fase 4: On-demand del cliente (Q3-Q4 2026)
 
