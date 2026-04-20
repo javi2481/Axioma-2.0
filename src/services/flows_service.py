@@ -17,6 +17,7 @@ from datetime import datetime
 from utils.logging_config import get_logger
 from utils.telemetry import TelemetryClient, Category, MessageId
 import asyncio
+from cachetools import LRUCache
 
 logger = get_logger(__name__)
 
@@ -79,7 +80,7 @@ class FlowsService:
         # Cache for flow file mappings to avoid repeated filesystem scans
         self._flow_file_cache = {}
         # Semaphores to prevent race conditions when updating the same flow concurrently
-        self._flow_locks = {}
+        self._flow_locks = LRUCache(maxsize=128)
         self._lock_creation_lock = asyncio.Lock()
         # Cache for enabled models to avoid redundant API calls
         self._enabled_models_cache = None
