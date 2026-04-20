@@ -1198,7 +1198,7 @@ class FlowsService:
 
             # Enable the model in Langflow first
             await self._enable_model_in_langflow(provider_name, model_value)
-                # Update template via Langflow API to get latest options
+            # Update template via Langflow API to get latest options
             template = await self._update_component_langflow(template, template["model"]["value"]) or template
             component_node["data"]["node"]["template"] = template
 
