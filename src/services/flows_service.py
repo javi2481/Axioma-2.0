@@ -1300,8 +1300,6 @@ class FlowsService:
 
             if response.status_code == 200:
                 logger.info(f"Successfully enabled model {model_value} for provider {provider_name}")
-                # Invalidate cache so it reflects the new state on next check if needed, 
-                # or we could update it locally. Clearing it is safer.
                 async with self._enabled_models_lock:
                     self._enabled_models_cache = None
                 return True
@@ -1309,6 +1307,8 @@ class FlowsService:
                 logger.warning(
                     f"Failed to enable model: HTTP {response.status_code} - {response.text}"
                 )
+                async with self._enabled_models_lock:
+                    self._enabled_models_cache = None
         except Exception as e:
             logger.error(f"Error enabling model in Langflow: {str(e)}")
         return False
