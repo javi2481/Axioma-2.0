@@ -1113,7 +1113,8 @@ async def onboarding(
             if body.embedding_provider or body.embedding_model:
                 await _update_mcp_servers_with_provider_credentials(current_config, session_manager=session_manager, flows_service=flows_service)
 
-            await _update_langflow_model_values(current_config, flows_service, embedding_model=body.embedding_model, embedding_provider=body.embedding_provider, llm_model=body.llm_model, llm_provider=body.llm_provider)
+            if body.llm_provider or body.llm_model or body.embedding_provider or body.embedding_model:
+                await _update_langflow_model_values(current_config, flows_service, embedding_model=body.embedding_model, embedding_provider=body.embedding_provider, llm_model=body.llm_model, llm_provider=body.llm_provider)
 
         except Exception as e:
             logger.error(
@@ -1486,30 +1487,36 @@ async def _update_langflow_model_values(config, flows_service, llm_model=None, l
     try:
 
         if llm_model or llm_provider:
-            current_llm_provider = llm_provider.lower() or config.agent.llm_provider.lower()
-            current_llm_model = llm_model or config.agent.llm_model
+            effective_llm_provider = (llm_provider or config.agent.llm_provider).lower()
+            if llm_provider and  llm_provider.lower() != config.agent.llm_provider.lower():
+                effective_llm_model = llm_model  # do not fall back; force caller to specify
+            else:
+                effective_llm_model = llm_model or config.agent.llm_model
             result = await flows_service.change_langflow_model_value(
-                current_llm_provider,
-                llm_model=current_llm_model,
+                effective_llm_provider,
+                llm_model=effective_llm_model,
                 force_llm_update=True
             )
 
             logger.info(
-                f"Successfully updated Langflow flows for LLM provider {embedding_provider}",
+                f"Successfully updated Langflow flows for LLM provider {effective_llm_provider}",
                 result=result
             )
 
         if embedding_model or embedding_provider:
-            effective_provider = embedding_provider or config.knowledge.embedding_provider.lower()
-            effective_model = embedding_model or config.knowledge.embedding_model
+            effective_embedding_provider = (embedding_provider or config.knowledge.embedding_provider).lower()
+            if embedding_provider and embedding_provider.lower() != config.knowledge.embedding_provider.lower():
+                effective_embedding_model = embedding_model  # do not fall back; force caller to specify
+            else:
+                effective_embedding_model = embedding_model or config.knowledge.embedding_model
             result = await flows_service.change_langflow_model_value(
-                effective_provider,
-                embedding_model=effective_model,
+                effective_embedding_provider,
+                embedding_model=effective_embedding_model,
                 force_embedding_update=True
             )
 
             logger.info(
-                f"Successfully updated Langflow flows for embedding provider {embedding_provider}",
+                f"Successfully updated Langflow flows for embedding provider {effective_embedding_provider}",
                 result=result
             )
 
