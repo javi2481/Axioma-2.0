@@ -4354,7 +4354,7 @@
             ],
             "frozen": false,
             "icon": "braces",
-            "last_updated": "2026-04-09T14:18:34.963Z",
+            "last_updated": "2026-04-17T22:34:51.074Z",
             "legacy": false,
             "lf_version": "1.8.0",
             "metadata": {},
@@ -4404,7 +4404,7 @@
                 "value": "72c3d17c-2dac-4a73-b48a-6518473d7830"
               },
               "_frontend_node_folder_id": {
-                "value": "d89df57e-0640-47c5-973b-37849ac97186"
+                "value": "79f95013-41e9-4a4f-af49-f07ec1fac77a"
               },
               "_type": "Component",
               "code": {
@@ -6073,6 +6073,9 @@
       },
       {
         "data": {
+          "_connectionMode": false,
+          "description": "Generate embeddings using a specified provider.",
+          "display_name": "Embedding Model",
           "id": "EmbeddingModel-FrWjX",
           "node": {
             "base_classes": [
@@ -6103,20 +6106,20 @@
             ],
             "frozen": false,
             "icon": "binary",
-            "last_updated": "2026-04-07T17:01:59.867Z",
+            "last_updated": "2026-04-17T22:35:04.471Z",
             "legacy": false,
             "metadata": {
-              "code_hash": "965b8431bfd8",
+              "code_hash": "59c007553b38",
               "dependencies": {
                 "dependencies": [
                   {
                     "name": "lfx",
-                    "version": null
+                    "version": "0.4.0"
                   }
                 ],
                 "total_dependencies": 1
               },
-              "module": "lfx.components.models_and_agents.embedding_model.EmbeddingModelComponent"
+              "module": "custom_components.embedding_model"
             },
             "minimized": false,
             "output_types": [],
@@ -6146,7 +6149,7 @@
                 "value": "72c3d17c-2dac-4a73-b48a-6518473d7830"
               },
               "_frontend_node_folder_id": {
-                "value": "d89df57e-0640-47c5-973b-37849ac97186"
+                "value": "79f95013-41e9-4a4f-af49-f07ec1fac77a"
               },
               "_type": "Component",
               "api_base": {
@@ -6196,13 +6199,13 @@
               },
               "base_url_ibm_watsonx": {
                 "_input_type": "DropdownInput",
-                "advanced": false,
-                "combobox": false,
+                "advanced": true,
+                "combobox": true,
                 "dialog_inputs": {},
                 "display_name": "watsonx API Endpoint",
                 "dynamic": false,
                 "external_options": {},
-                "info": "The base URL of the API (IBM watsonx.ai only)",
+                "info": "Falls back to WATSONX_URL environment variable",
                 "load_from_db": false,
                 "name": "base_url_ibm_watsonx",
                 "options": [
@@ -6225,7 +6228,7 @@
                 "trace_as_metadata": true,
                 "track_in_telemetry": true,
                 "type": "str",
-                "value": ""
+                "value": "https://us-south.ml.cloud.ibm.com"
               },
               "chunk_size": {
                 "_input_type": "IntInput",
@@ -6263,7 +6266,7 @@
                 "show": true,
                 "title_case": false,
                 "type": "code",
-                "value": "from lfx.base.embeddings.model import LCEmbeddingsModel\nfrom lfx.base.models.unified_models import (\n    get_embedding_model_options,\n    get_embeddings,\n    handle_model_input_update,\n)\nfrom lfx.base.models.watsonx_constants import IBM_WATSONX_URLS\nfrom lfx.field_typing import Embeddings\nfrom lfx.io import (\n    BoolInput,\n    DictInput,\n    DropdownInput,\n    FloatInput,\n    IntInput,\n    MessageTextInput,\n    ModelInput,\n    SecretStrInput,\n    StrInput,\n)\n\nDEFAULT_OLLAMA_URL = \"http://localhost:11434\"\n\n\nclass EmbeddingModelComponent(LCEmbeddingsModel):\n    display_name = \"Embedding Model\"\n    description = \"Generate embeddings using a specified provider.\"\n    documentation: str = \"https://docs.langflow.org/components-embedding-models\"\n    icon = \"binary\"\n    name = \"EmbeddingModel\"\n    category = \"models\"\n\n    def update_build_config(self, build_config: dict, field_value: str, field_name: str | None = None):\n        \"\"\"Dynamically update build config with user-filtered model options.\"\"\"\n        return handle_model_input_update(\n            self,\n            dict(build_config),\n            field_value,\n            field_name,\n            cache_key_prefix=\"embedding_model_options\",\n            get_options_func=get_embedding_model_options,\n        )\n\n    inputs = [\n        ModelInput(\n            name=\"model\",\n            display_name=\"Embedding Model\",\n            info=\"Select your model provider\",\n            real_time_refresh=True,\n            required=True,\n            model_type=\"embedding\",\n            input_types=[\"Embeddings\"],  # Override default to accept Embeddings instead of LanguageModel\n        ),\n        SecretStrInput(\n            name=\"api_key\",\n            display_name=\"API Key\",\n            info=\"Overrides global provider settings. Leave blank to use your pre-configured API Key.\",\n            real_time_refresh=True,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"api_base\",\n            display_name=\"API Base URL\",\n            info=\"Base URL for the API. Leave empty for default.\",\n            advanced=True,\n        ),\n        # Watson-specific inputs\n        DropdownInput(\n            name=\"base_url_ibm_watsonx\",\n            display_name=\"watsonx API Endpoint\",\n            info=\"The base URL of the API (IBM watsonx.ai only)\",\n            options=IBM_WATSONX_URLS,\n            value=IBM_WATSONX_URLS[0],\n            show=False,\n            real_time_refresh=True,\n        ),\n        MessageTextInput(\n            name=\"project_id\",\n            display_name=\"Project ID\",\n            info=\"IBM watsonx.ai Project ID (required for IBM watsonx.ai)\",\n            show=False,\n        ),\n        # Ollama-specific input\n        StrInput(\n            name=\"ollama_base_url\",\n            display_name=\"Ollama API URL\",\n            info=f\"Endpoint of the Ollama API (Ollama only). Defaults to {DEFAULT_OLLAMA_URL}\",\n            value=DEFAULT_OLLAMA_URL,\n            show=False,\n            real_time_refresh=True,\n        ),\n        IntInput(\n            name=\"dimensions\",\n            display_name=\"Dimensions\",\n            info=\"The number of dimensions the resulting output embeddings should have. \"\n            \"Only supported by certain models.\",\n            advanced=True,\n        ),\n        IntInput(\n            name=\"chunk_size\",\n            display_name=\"Chunk Size\",\n            advanced=True,\n            value=1000,\n        ),\n        FloatInput(\n            name=\"request_timeout\",\n            display_name=\"Request Timeout\",\n            advanced=True,\n        ),\n        IntInput(\n            name=\"max_retries\",\n            display_name=\"Max Retries\",\n            advanced=True,\n            value=3,\n        ),\n        BoolInput(\n            name=\"show_progress_bar\",\n            display_name=\"Show Progress Bar\",\n            advanced=True,\n        ),\n        DictInput(\n            name=\"model_kwargs\",\n            display_name=\"Model Kwargs\",\n            advanced=True,\n            info=(\n                \"Additional keyword arguments to pass to the model. Only used by providers that support this parameter \"\n                \"(e.g. OpenAI, Google Generative AI). \"\n                \"Ignored for providers that do not include it in their parameter mapping.\"\n            ),\n        ),\n        IntInput(\n            name=\"truncate_input_tokens\",\n            display_name=\"Truncate Input Tokens\",\n            advanced=True,\n            value=200,\n            show=False,\n        ),\n        BoolInput(\n            name=\"input_text\",\n            display_name=\"Include the original text in the output\",\n            value=True,\n            advanced=True,\n            show=False,\n        ),\n    ]\n\n    def build_embeddings(self) -> Embeddings:\n        \"\"\"Build and return an embeddings instance based on the selected model.\"\"\"\n        return get_embeddings(\n            model=self.model,\n            user_id=self.user_id,\n            api_key=self.api_key,\n            api_base=self.api_base,\n            dimensions=self.dimensions,\n            chunk_size=self.chunk_size,\n            request_timeout=self.request_timeout,\n            max_retries=self.max_retries,\n            show_progress_bar=self.show_progress_bar,\n            model_kwargs=self.model_kwargs,\n            watsonx_url=getattr(self, \"base_url_ibm_watsonx\", None),\n            watsonx_project_id=getattr(self, \"project_id\", None),\n            watsonx_truncate_input_tokens=getattr(self, \"truncate_input_tokens\", None),\n            watsonx_input_text=getattr(self, \"input_text\", None),\n            ollama_base_url=getattr(self, \"ollama_base_url\", None),\n        )\n"
+                "value": "from lfx.base.embeddings.model import LCEmbeddingsModel\nfrom lfx.base.models.unified_models import (\n    get_embedding_model_options,\n    get_embeddings,\n    handle_model_input_update,\n)\nfrom lfx.base.models.watsonx_constants import IBM_WATSONX_URLS\nfrom lfx.field_typing import Embeddings\nfrom lfx.io import (\n    BoolInput,\n    DictInput,\n    DropdownInput,\n    FloatInput,\n    IntInput,\n    MessageTextInput,\n    ModelInput,\n    SecretStrInput,\n    StrInput,\n)\n\nDEFAULT_OLLAMA_URL = \"http://localhost:11434\"\n\n\nclass EmbeddingModelComponent(LCEmbeddingsModel):\n    display_name = \"Embedding Model\"\n    description = \"Generate embeddings using a specified provider.\"\n    documentation: str = \"https://docs.langflow.org/components-embedding-models\"\n    icon = \"binary\"\n    name = \"EmbeddingModel\"\n    category = \"models\"\n\n    def update_build_config(self, build_config: dict, field_value: str, field_name: str | None = None):\n        \"\"\"Dynamically update build config with user-filtered model options.\"\"\"\n        return handle_model_input_update(\n            self,\n            dict(build_config),\n            field_value,\n            field_name,\n            cache_key_prefix=\"embedding_model_options\",\n            get_options_func=get_embedding_model_options,\n        )\n\n    inputs = [\n        ModelInput(\n            name=\"model\",\n            display_name=\"Embedding Model\",\n            info=\"Select your model provider\",\n            real_time_refresh=True,\n            required=True,\n            model_type=\"embedding\",\n            input_types=[\"Embeddings\"],  # Override default to accept Embeddings instead of LanguageModel\n        ),\n        SecretStrInput(\n            name=\"api_key\",\n            display_name=\"API Key\",\n            info=\"Overrides global provider settings. Leave blank to use your pre-configured API Key.\",\n            real_time_refresh=True,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"api_base\",\n            display_name=\"API Base URL\",\n            info=\"Base URL for the API. Leave empty for default.\",\n            advanced=True,\n        ),\n        # Watson-specific inputs\n        DropdownInput(\n            name=\"base_url_ibm_watsonx\",\n            display_name=\"watsonx API Endpoint\",\n            info=\"The base URL of the API (IBM watsonx.ai only)\",\n            options=IBM_WATSONX_URLS,\n            value=IBM_WATSONX_URLS[0],\n            combobox=True,\n            show=False,\n            real_time_refresh=True,\n        ),\n        MessageTextInput(\n            name=\"project_id\",\n            display_name=\"Project ID\",\n            info=\"IBM watsonx.ai Project ID (required for IBM watsonx.ai)\",\n            show=False,\n        ),\n        # Ollama-specific input\n        StrInput(\n            name=\"ollama_base_url\",\n            display_name=\"Ollama API URL\",\n            info=f\"Endpoint of the Ollama API (Ollama only). Defaults to {DEFAULT_OLLAMA_URL}\",\n            value=DEFAULT_OLLAMA_URL,\n            show=False,\n            real_time_refresh=True,\n        ),\n        IntInput(\n            name=\"dimensions\",\n            display_name=\"Dimensions\",\n            info=\"The number of dimensions the resulting output embeddings should have. \"\n            \"Only supported by certain models.\",\n            advanced=True,\n        ),\n        IntInput(\n            name=\"chunk_size\",\n            display_name=\"Chunk Size\",\n            advanced=True,\n            value=1000,\n        ),\n        FloatInput(\n            name=\"request_timeout\",\n            display_name=\"Request Timeout\",\n            advanced=True,\n        ),\n        IntInput(\n            name=\"max_retries\",\n            display_name=\"Max Retries\",\n            advanced=True,\n            value=3,\n        ),\n        BoolInput(\n            name=\"show_progress_bar\",\n            display_name=\"Show Progress Bar\",\n            advanced=True,\n        ),\n        DictInput(\n            name=\"model_kwargs\",\n            display_name=\"Model Kwargs\",\n            advanced=True,\n            info=(\n                \"Additional keyword arguments to pass to the model. Only used by providers that support this parameter \"\n                \"(e.g. OpenAI, Google Generative AI). \"\n                \"Ignored for providers that do not include it in their parameter mapping.\"\n            ),\n        ),\n        IntInput(\n            name=\"truncate_input_tokens\",\n            display_name=\"Truncate Input Tokens\",\n            advanced=True,\n            value=200,\n            show=False,\n        ),\n        BoolInput(\n            name=\"input_text\",\n            display_name=\"Include the original text in the output\",\n            value=True,\n            advanced=True,\n            show=False,\n        ),\n    ]\n\n    def build_embeddings(self) -> Embeddings:\n        \"\"\"Build and return an embeddings instance based on the selected model.\"\"\"\n        return get_embeddings(\n            model=self.model,\n            user_id=self.user_id,\n            api_key=self.api_key,\n            api_base=self.api_base,\n            dimensions=self.dimensions,\n            chunk_size=self.chunk_size,\n            request_timeout=self.request_timeout,\n            max_retries=self.max_retries,\n            show_progress_bar=self.show_progress_bar,\n            model_kwargs=self.model_kwargs,\n            watsonx_url=getattr(self, \"base_url_ibm_watsonx\", None),\n            watsonx_project_id=getattr(self, \"project_id\", None),\n            watsonx_truncate_input_tokens=getattr(self, \"truncate_input_tokens\", None),\n            watsonx_input_text=getattr(self, \"input_text\", None),\n            ollama_base_url=getattr(self, \"ollama_base_url\", None),\n        )\n"
               },
               "dimensions": {
                 "_input_type": "IntInput",
@@ -6305,7 +6308,7 @@
                 "type": "bool",
                 "value": true
               },
-              "is_refresh": true,
+              "is_refresh": false,
               "max_retries": {
                 "_input_type": "IntInput",
                 "advanced": true,
@@ -6348,6 +6351,7 @@
                 ],
                 "list": false,
                 "list_add_label": "Add More",
+                "load_from_db": false,
                 "model_type": "embedding",
                 "name": "model",
                 "options": [
@@ -6413,6 +6417,96 @@
                     },
                     "name": "text-embedding-ada-002",
                     "provider": "OpenAI"
+                  },
+                  {
+                    "category": "IBM WatsonX",
+                    "icon": "WatsonxAI",
+                    "metadata": {
+                      "embedding_class": "WatsonxEmbeddings",
+                      "model_type": "embeddings",
+                      "param_mapping": {
+                        "api_key": "apikey",
+                        "model_id": "model_id",
+                        "project_id": "project_id",
+                        "request_timeout": "request_timeout",
+                        "space_id": "space_id",
+                        "url": "url"
+                      }
+                    },
+                    "name": "ibm/granite-embedding-278m-multilingual",
+                    "provider": "IBM WatsonX"
+                  },
+                  {
+                    "category": "IBM WatsonX",
+                    "icon": "WatsonxAI",
+                    "metadata": {
+                      "embedding_class": "WatsonxEmbeddings",
+                      "model_type": "embeddings",
+                      "param_mapping": {
+                        "api_key": "apikey",
+                        "model_id": "model_id",
+                        "project_id": "project_id",
+                        "request_timeout": "request_timeout",
+                        "space_id": "space_id",
+                        "url": "url"
+                      }
+                    },
+                    "name": "ibm/slate-125m-english-rtrvr-v2",
+                    "provider": "IBM WatsonX"
+                  },
+                  {
+                    "category": "IBM WatsonX",
+                    "icon": "WatsonxAI",
+                    "metadata": {
+                      "embedding_class": "WatsonxEmbeddings",
+                      "model_type": "embeddings",
+                      "param_mapping": {
+                        "api_key": "apikey",
+                        "model_id": "model_id",
+                        "project_id": "project_id",
+                        "request_timeout": "request_timeout",
+                        "space_id": "space_id",
+                        "url": "url"
+                      }
+                    },
+                    "name": "ibm/slate-30m-english-rtrvr-v2",
+                    "provider": "IBM WatsonX"
+                  },
+                  {
+                    "category": "IBM WatsonX",
+                    "icon": "WatsonxAI",
+                    "metadata": {
+                      "embedding_class": "WatsonxEmbeddings",
+                      "model_type": "embeddings",
+                      "param_mapping": {
+                        "api_key": "apikey",
+                        "model_id": "model_id",
+                        "project_id": "project_id",
+                        "request_timeout": "request_timeout",
+                        "space_id": "space_id",
+                        "url": "url"
+                      }
+                    },
+                    "name": "intfloat/multilingual-e5-large",
+                    "provider": "IBM WatsonX"
+                  },
+                  {
+                    "category": "IBM WatsonX",
+                    "icon": "WatsonxAI",
+                    "metadata": {
+                      "embedding_class": "WatsonxEmbeddings",
+                      "model_type": "embeddings",
+                      "param_mapping": {
+                        "api_key": "apikey",
+                        "model_id": "model_id",
+                        "project_id": "project_id",
+                        "request_timeout": "request_timeout",
+                        "space_id": "space_id",
+                        "url": "url"
+                      }
+                    },
+                    "name": "sentence-transformers/all-minilm-l6-v2",
+                    "provider": "IBM WatsonX"
                   }
                 ],
                 "override_skip": false,
@@ -6428,7 +6522,6 @@
                 "type": "model",
                 "value": [
                   {
-                    "category": "OpenAI",
                     "icon": "OpenAI",
                     "metadata": {
                       "embedding_class": "OpenAIEmbeddings",
@@ -6494,16 +6587,16 @@
               },
               "project_id": {
                 "_input_type": "MessageTextInput",
-                "advanced": false,
+                "advanced": true,
                 "display_name": "Project ID",
                 "dynamic": false,
-                "info": "IBM watsonx.ai Project ID (required for IBM watsonx.ai)",
+                "info": "Falls back to WATSONX_PROJECT_ID environment variable",
                 "input_types": [
                   "Message"
                 ],
                 "list": false,
                 "list_add_label": "Add More",
-                "load_from_db": false,
+                "load_from_db": true,
                 "name": "project_id",
                 "override_skip": false,
                 "placeholder": "",
@@ -6515,7 +6608,7 @@
                 "trace_as_metadata": true,
                 "track_in_telemetry": false,
                 "type": "str",
-                "value": ""
+                "value": "WATSONX_PROJECT_ID"
               },
               "request_timeout": {
                 "_input_type": "FloatInput",
@@ -6598,6 +6691,9 @@
       },
       {
         "data": {
+          "_connectionMode": false,
+          "description": "Generate embeddings using a specified provider.",
+          "display_name": "Embedding Model",
           "id": "EmbeddingModel-cBonL",
           "node": {
             "base_classes": [
@@ -6628,20 +6724,20 @@
             ],
             "frozen": false,
             "icon": "binary",
-            "last_updated": "2026-04-07T17:02:02.017Z",
+            "last_updated": "2026-04-17T22:35:05.937Z",
             "legacy": false,
             "metadata": {
-              "code_hash": "965b8431bfd8",
+              "code_hash": "59c007553b38",
               "dependencies": {
                 "dependencies": [
                   {
                     "name": "lfx",
-                    "version": null
+                    "version": "0.4.0"
                   }
                 ],
                 "total_dependencies": 1
               },
-              "module": "lfx.components.models_and_agents.embedding_model.EmbeddingModelComponent"
+              "module": "custom_components.embedding_model"
             },
             "minimized": false,
             "output_types": [],
@@ -6671,7 +6767,7 @@
                 "value": "72c3d17c-2dac-4a73-b48a-6518473d7830"
               },
               "_frontend_node_folder_id": {
-                "value": "d89df57e-0640-47c5-973b-37849ac97186"
+                "value": "79f95013-41e9-4a4f-af49-f07ec1fac77a"
               },
               "_type": "Component",
               "api_base": {
@@ -6721,13 +6817,13 @@
               },
               "base_url_ibm_watsonx": {
                 "_input_type": "DropdownInput",
-                "advanced": false,
-                "combobox": false,
+                "advanced": true,
+                "combobox": true,
                 "dialog_inputs": {},
                 "display_name": "watsonx API Endpoint",
                 "dynamic": false,
                 "external_options": {},
-                "info": "The base URL of the API (IBM watsonx.ai only)",
+                "info": "Falls back to WATSONX_URL environment variable",
                 "load_from_db": false,
                 "name": "base_url_ibm_watsonx",
                 "options": [
@@ -6750,7 +6846,7 @@
                 "trace_as_metadata": true,
                 "track_in_telemetry": true,
                 "type": "str",
-                "value": ""
+                "value": "https://us-south.ml.cloud.ibm.com"
               },
               "chunk_size": {
                 "_input_type": "IntInput",
@@ -6788,7 +6884,7 @@
                 "show": true,
                 "title_case": false,
                 "type": "code",
-                "value": "from lfx.base.embeddings.model import LCEmbeddingsModel\nfrom lfx.base.models.unified_models import (\n    get_embedding_model_options,\n    get_embeddings,\n    handle_model_input_update,\n)\nfrom lfx.base.models.watsonx_constants import IBM_WATSONX_URLS\nfrom lfx.field_typing import Embeddings\nfrom lfx.io import (\n    BoolInput,\n    DictInput,\n    DropdownInput,\n    FloatInput,\n    IntInput,\n    MessageTextInput,\n    ModelInput,\n    SecretStrInput,\n    StrInput,\n)\n\nDEFAULT_OLLAMA_URL = \"http://localhost:11434\"\n\n\nclass EmbeddingModelComponent(LCEmbeddingsModel):\n    display_name = \"Embedding Model\"\n    description = \"Generate embeddings using a specified provider.\"\n    documentation: str = \"https://docs.langflow.org/components-embedding-models\"\n    icon = \"binary\"\n    name = \"EmbeddingModel\"\n    category = \"models\"\n\n    def update_build_config(self, build_config: dict, field_value: str, field_name: str | None = None):\n        \"\"\"Dynamically update build config with user-filtered model options.\"\"\"\n        return handle_model_input_update(\n            self,\n            dict(build_config),\n            field_value,\n            field_name,\n            cache_key_prefix=\"embedding_model_options\",\n            get_options_func=get_embedding_model_options,\n        )\n\n    inputs = [\n        ModelInput(\n            name=\"model\",\n            display_name=\"Embedding Model\",\n            info=\"Select your model provider\",\n            real_time_refresh=True,\n            required=True,\n            model_type=\"embedding\",\n            input_types=[\"Embeddings\"],  # Override default to accept Embeddings instead of LanguageModel\n        ),\n        SecretStrInput(\n            name=\"api_key\",\n            display_name=\"API Key\",\n            info=\"Overrides global provider settings. Leave blank to use your pre-configured API Key.\",\n            real_time_refresh=True,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"api_base\",\n            display_name=\"API Base URL\",\n            info=\"Base URL for the API. Leave empty for default.\",\n            advanced=True,\n        ),\n        # Watson-specific inputs\n        DropdownInput(\n            name=\"base_url_ibm_watsonx\",\n            display_name=\"watsonx API Endpoint\",\n            info=\"The base URL of the API (IBM watsonx.ai only)\",\n            options=IBM_WATSONX_URLS,\n            value=IBM_WATSONX_URLS[0],\n            show=False,\n            real_time_refresh=True,\n        ),\n        MessageTextInput(\n            name=\"project_id\",\n            display_name=\"Project ID\",\n            info=\"IBM watsonx.ai Project ID (required for IBM watsonx.ai)\",\n            show=False,\n        ),\n        # Ollama-specific input\n        StrInput(\n            name=\"ollama_base_url\",\n            display_name=\"Ollama API URL\",\n            info=f\"Endpoint of the Ollama API (Ollama only). Defaults to {DEFAULT_OLLAMA_URL}\",\n            value=DEFAULT_OLLAMA_URL,\n            show=False,\n            real_time_refresh=True,\n        ),\n        IntInput(\n            name=\"dimensions\",\n            display_name=\"Dimensions\",\n            info=\"The number of dimensions the resulting output embeddings should have. \"\n            \"Only supported by certain models.\",\n            advanced=True,\n        ),\n        IntInput(\n            name=\"chunk_size\",\n            display_name=\"Chunk Size\",\n            advanced=True,\n            value=1000,\n        ),\n        FloatInput(\n            name=\"request_timeout\",\n            display_name=\"Request Timeout\",\n            advanced=True,\n        ),\n        IntInput(\n            name=\"max_retries\",\n            display_name=\"Max Retries\",\n            advanced=True,\n            value=3,\n        ),\n        BoolInput(\n            name=\"show_progress_bar\",\n            display_name=\"Show Progress Bar\",\n            advanced=True,\n        ),\n        DictInput(\n            name=\"model_kwargs\",\n            display_name=\"Model Kwargs\",\n            advanced=True,\n            info=(\n                \"Additional keyword arguments to pass to the model. Only used by providers that support this parameter \"\n                \"(e.g. OpenAI, Google Generative AI). \"\n                \"Ignored for providers that do not include it in their parameter mapping.\"\n            ),\n        ),\n        IntInput(\n            name=\"truncate_input_tokens\",\n            display_name=\"Truncate Input Tokens\",\n            advanced=True,\n            value=200,\n            show=False,\n        ),\n        BoolInput(\n            name=\"input_text\",\n            display_name=\"Include the original text in the output\",\n            value=True,\n            advanced=True,\n            show=False,\n        ),\n    ]\n\n    def build_embeddings(self) -> Embeddings:\n        \"\"\"Build and return an embeddings instance based on the selected model.\"\"\"\n        return get_embeddings(\n            model=self.model,\n            user_id=self.user_id,\n            api_key=self.api_key,\n            api_base=self.api_base,\n            dimensions=self.dimensions,\n            chunk_size=self.chunk_size,\n            request_timeout=self.request_timeout,\n            max_retries=self.max_retries,\n            show_progress_bar=self.show_progress_bar,\n            model_kwargs=self.model_kwargs,\n            watsonx_url=getattr(self, \"base_url_ibm_watsonx\", None),\n            watsonx_project_id=getattr(self, \"project_id\", None),\n            watsonx_truncate_input_tokens=getattr(self, \"truncate_input_tokens\", None),\n            watsonx_input_text=getattr(self, \"input_text\", None),\n            ollama_base_url=getattr(self, \"ollama_base_url\", None),\n        )\n"
+                "value": "from lfx.base.embeddings.model import LCEmbeddingsModel\nfrom lfx.base.models.unified_models import (\n    get_embedding_model_options,\n    get_embeddings,\n    handle_model_input_update,\n)\nfrom lfx.base.models.watsonx_constants import IBM_WATSONX_URLS\nfrom lfx.field_typing import Embeddings\nfrom lfx.io import (\n    BoolInput,\n    DictInput,\n    DropdownInput,\n    FloatInput,\n    IntInput,\n    MessageTextInput,\n    ModelInput,\n    SecretStrInput,\n    StrInput,\n)\n\nDEFAULT_OLLAMA_URL = \"http://localhost:11434\"\n\n\nclass EmbeddingModelComponent(LCEmbeddingsModel):\n    display_name = \"Embedding Model\"\n    description = \"Generate embeddings using a specified provider.\"\n    documentation: str = \"https://docs.langflow.org/components-embedding-models\"\n    icon = \"binary\"\n    name = \"EmbeddingModel\"\n    category = \"models\"\n\n    def update_build_config(self, build_config: dict, field_value: str, field_name: str | None = None):\n        \"\"\"Dynamically update build config with user-filtered model options.\"\"\"\n        return handle_model_input_update(\n            self,\n            dict(build_config),\n            field_value,\n            field_name,\n            cache_key_prefix=\"embedding_model_options\",\n            get_options_func=get_embedding_model_options,\n        )\n\n    inputs = [\n        ModelInput(\n            name=\"model\",\n            display_name=\"Embedding Model\",\n            info=\"Select your model provider\",\n            real_time_refresh=True,\n            required=True,\n            model_type=\"embedding\",\n            input_types=[\"Embeddings\"],  # Override default to accept Embeddings instead of LanguageModel\n        ),\n        SecretStrInput(\n            name=\"api_key\",\n            display_name=\"API Key\",\n            info=\"Overrides global provider settings. Leave blank to use your pre-configured API Key.\",\n            real_time_refresh=True,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"api_base\",\n            display_name=\"API Base URL\",\n            info=\"Base URL for the API. Leave empty for default.\",\n            advanced=True,\n        ),\n        # Watson-specific inputs\n        DropdownInput(\n            name=\"base_url_ibm_watsonx\",\n            display_name=\"watsonx API Endpoint\",\n            info=\"The base URL of the API (IBM watsonx.ai only)\",\n            options=IBM_WATSONX_URLS,\n            value=IBM_WATSONX_URLS[0],\n            combobox=True,\n            show=False,\n            real_time_refresh=True,\n        ),\n        MessageTextInput(\n            name=\"project_id\",\n            display_name=\"Project ID\",\n            info=\"IBM watsonx.ai Project ID (required for IBM watsonx.ai)\",\n            show=False,\n        ),\n        # Ollama-specific input\n        StrInput(\n            name=\"ollama_base_url\",\n            display_name=\"Ollama API URL\",\n            info=f\"Endpoint of the Ollama API (Ollama only). Defaults to {DEFAULT_OLLAMA_URL}\",\n            value=DEFAULT_OLLAMA_URL,\n            show=False,\n            real_time_refresh=True,\n        ),\n        IntInput(\n            name=\"dimensions\",\n            display_name=\"Dimensions\",\n            info=\"The number of dimensions the resulting output embeddings should have. \"\n            \"Only supported by certain models.\",\n            advanced=True,\n        ),\n        IntInput(\n            name=\"chunk_size\",\n            display_name=\"Chunk Size\",\n            advanced=True,\n            value=1000,\n        ),\n        FloatInput(\n            name=\"request_timeout\",\n            display_name=\"Request Timeout\",\n            advanced=True,\n        ),\n        IntInput(\n            name=\"max_retries\",\n            display_name=\"Max Retries\",\n            advanced=True,\n            value=3,\n        ),\n        BoolInput(\n            name=\"show_progress_bar\",\n            display_name=\"Show Progress Bar\",\n            advanced=True,\n        ),\n        DictInput(\n            name=\"model_kwargs\",\n            display_name=\"Model Kwargs\",\n            advanced=True,\n            info=(\n                \"Additional keyword arguments to pass to the model. Only used by providers that support this parameter \"\n                \"(e.g. OpenAI, Google Generative AI). \"\n                \"Ignored for providers that do not include it in their parameter mapping.\"\n            ),\n        ),\n        IntInput(\n            name=\"truncate_input_tokens\",\n            display_name=\"Truncate Input Tokens\",\n            advanced=True,\n            value=200,\n            show=False,\n        ),\n        BoolInput(\n            name=\"input_text\",\n            display_name=\"Include the original text in the output\",\n            value=True,\n            advanced=True,\n            show=False,\n        ),\n    ]\n\n    def build_embeddings(self) -> Embeddings:\n        \"\"\"Build and return an embeddings instance based on the selected model.\"\"\"\n        return get_embeddings(\n            model=self.model,\n            user_id=self.user_id,\n            api_key=self.api_key,\n            api_base=self.api_base,\n            dimensions=self.dimensions,\n            chunk_size=self.chunk_size,\n            request_timeout=self.request_timeout,\n            max_retries=self.max_retries,\n            show_progress_bar=self.show_progress_bar,\n            model_kwargs=self.model_kwargs,\n            watsonx_url=getattr(self, \"base_url_ibm_watsonx\", None),\n            watsonx_project_id=getattr(self, \"project_id\", None),\n            watsonx_truncate_input_tokens=getattr(self, \"truncate_input_tokens\", None),\n            watsonx_input_text=getattr(self, \"input_text\", None),\n            ollama_base_url=getattr(self, \"ollama_base_url\", None),\n        )\n"
               },
               "dimensions": {
                 "_input_type": "IntInput",
@@ -6830,7 +6926,7 @@
                 "type": "bool",
                 "value": true
               },
-              "is_refresh": true,
+              "is_refresh": false,
               "max_retries": {
                 "_input_type": "IntInput",
                 "advanced": true,
@@ -6873,6 +6969,7 @@
                 ],
                 "list": false,
                 "list_add_label": "Add More",
+                "load_from_db": false,
                 "model_type": "embedding",
                 "name": "model",
                 "options": [
@@ -6938,6 +7035,96 @@
                     },
                     "name": "text-embedding-ada-002",
                     "provider": "OpenAI"
+                  },
+                  {
+                    "category": "IBM WatsonX",
+                    "icon": "WatsonxAI",
+                    "metadata": {
+                      "embedding_class": "WatsonxEmbeddings",
+                      "model_type": "embeddings",
+                      "param_mapping": {
+                        "api_key": "apikey",
+                        "model_id": "model_id",
+                        "project_id": "project_id",
+                        "request_timeout": "request_timeout",
+                        "space_id": "space_id",
+                        "url": "url"
+                      }
+                    },
+                    "name": "ibm/granite-embedding-278m-multilingual",
+                    "provider": "IBM WatsonX"
+                  },
+                  {
+                    "category": "IBM WatsonX",
+                    "icon": "WatsonxAI",
+                    "metadata": {
+                      "embedding_class": "WatsonxEmbeddings",
+                      "model_type": "embeddings",
+                      "param_mapping": {
+                        "api_key": "apikey",
+                        "model_id": "model_id",
+                        "project_id": "project_id",
+                        "request_timeout": "request_timeout",
+                        "space_id": "space_id",
+                        "url": "url"
+                      }
+                    },
+                    "name": "ibm/slate-125m-english-rtrvr-v2",
+                    "provider": "IBM WatsonX"
+                  },
+                  {
+                    "category": "IBM WatsonX",
+                    "icon": "WatsonxAI",
+                    "metadata": {
+                      "embedding_class": "WatsonxEmbeddings",
+                      "model_type": "embeddings",
+                      "param_mapping": {
+                        "api_key": "apikey",
+                        "model_id": "model_id",
+                        "project_id": "project_id",
+                        "request_timeout": "request_timeout",
+                        "space_id": "space_id",
+                        "url": "url"
+                      }
+                    },
+                    "name": "ibm/slate-30m-english-rtrvr-v2",
+                    "provider": "IBM WatsonX"
+                  },
+                  {
+                    "category": "IBM WatsonX",
+                    "icon": "WatsonxAI",
+                    "metadata": {
+                      "embedding_class": "WatsonxEmbeddings",
+                      "model_type": "embeddings",
+                      "param_mapping": {
+                        "api_key": "apikey",
+                        "model_id": "model_id",
+                        "project_id": "project_id",
+                        "request_timeout": "request_timeout",
+                        "space_id": "space_id",
+                        "url": "url"
+                      }
+                    },
+                    "name": "intfloat/multilingual-e5-large",
+                    "provider": "IBM WatsonX"
+                  },
+                  {
+                    "category": "IBM WatsonX",
+                    "icon": "WatsonxAI",
+                    "metadata": {
+                      "embedding_class": "WatsonxEmbeddings",
+                      "model_type": "embeddings",
+                      "param_mapping": {
+                        "api_key": "apikey",
+                        "model_id": "model_id",
+                        "project_id": "project_id",
+                        "request_timeout": "request_timeout",
+                        "space_id": "space_id",
+                        "url": "url"
+                      }
+                    },
+                    "name": "sentence-transformers/all-minilm-l6-v2",
+                    "provider": "IBM WatsonX"
                   }
                 ],
                 "override_skip": false,
@@ -6953,7 +7140,6 @@
                 "type": "model",
                 "value": [
                   {
-                    "category": "OpenAI",
                     "icon": "OpenAI",
                     "metadata": {
                       "embedding_class": "OpenAIEmbeddings",
@@ -7019,16 +7205,16 @@
               },
               "project_id": {
                 "_input_type": "MessageTextInput",
-                "advanced": false,
+                "advanced": true,
                 "display_name": "Project ID",
                 "dynamic": false,
-                "info": "IBM watsonx.ai Project ID (required for IBM watsonx.ai)",
+                "info": "Falls back to WATSONX_PROJECT_ID environment variable",
                 "input_types": [
                   "Message"
                 ],
                 "list": false,
                 "list_add_label": "Add More",
-                "load_from_db": false,
+                "load_from_db": true,
                 "name": "project_id",
                 "override_skip": false,
                 "placeholder": "",
@@ -7040,7 +7226,7 @@
                 "trace_as_metadata": true,
                 "track_in_telemetry": false,
                 "type": "str",
-                "value": ""
+                "value": "WATSONX_PROJECT_ID"
               },
               "request_timeout": {
                 "_input_type": "FloatInput",
@@ -7123,6 +7309,9 @@
       },
       {
         "data": {
+          "_connectionMode": false,
+          "description": "Generate embeddings using a specified provider.",
+          "display_name": "Embedding Model",
           "id": "EmbeddingModel-qb5S3",
           "node": {
             "base_classes": [
@@ -7153,20 +7342,20 @@
             ],
             "frozen": false,
             "icon": "binary",
-            "last_updated": "2026-04-07T17:02:02.874Z",
+            "last_updated": "2026-04-17T22:35:07.360Z",
             "legacy": false,
             "metadata": {
-              "code_hash": "965b8431bfd8",
+              "code_hash": "59c007553b38",
               "dependencies": {
                 "dependencies": [
                   {
                     "name": "lfx",
-                    "version": null
+                    "version": "0.4.0"
                   }
                 ],
                 "total_dependencies": 1
               },
-              "module": "lfx.components.models_and_agents.embedding_model.EmbeddingModelComponent"
+              "module": "custom_components.embedding_model"
             },
             "minimized": false,
             "output_types": [],
@@ -7196,7 +7385,7 @@
                 "value": "72c3d17c-2dac-4a73-b48a-6518473d7830"
               },
               "_frontend_node_folder_id": {
-                "value": "d89df57e-0640-47c5-973b-37849ac97186"
+                "value": "79f95013-41e9-4a4f-af49-f07ec1fac77a"
               },
               "_type": "Component",
               "api_base": {
@@ -7246,13 +7435,13 @@
               },
               "base_url_ibm_watsonx": {
                 "_input_type": "DropdownInput",
-                "advanced": false,
-                "combobox": false,
+                "advanced": true,
+                "combobox": true,
                 "dialog_inputs": {},
                 "display_name": "watsonx API Endpoint",
                 "dynamic": false,
                 "external_options": {},
-                "info": "The base URL of the API (IBM watsonx.ai only)",
+                "info": "Falls back to WATSONX_URL environment variable",
                 "load_from_db": false,
                 "name": "base_url_ibm_watsonx",
                 "options": [
@@ -7275,7 +7464,7 @@
                 "trace_as_metadata": true,
                 "track_in_telemetry": true,
                 "type": "str",
-                "value": ""
+                "value": "https://us-south.ml.cloud.ibm.com"
               },
               "chunk_size": {
                 "_input_type": "IntInput",
@@ -7313,7 +7502,7 @@
                 "show": true,
                 "title_case": false,
                 "type": "code",
-                "value": "from lfx.base.embeddings.model import LCEmbeddingsModel\nfrom lfx.base.models.unified_models import (\n    get_embedding_model_options,\n    get_embeddings,\n    handle_model_input_update,\n)\nfrom lfx.base.models.watsonx_constants import IBM_WATSONX_URLS\nfrom lfx.field_typing import Embeddings\nfrom lfx.io import (\n    BoolInput,\n    DictInput,\n    DropdownInput,\n    FloatInput,\n    IntInput,\n    MessageTextInput,\n    ModelInput,\n    SecretStrInput,\n    StrInput,\n)\n\nDEFAULT_OLLAMA_URL = \"http://localhost:11434\"\n\n\nclass EmbeddingModelComponent(LCEmbeddingsModel):\n    display_name = \"Embedding Model\"\n    description = \"Generate embeddings using a specified provider.\"\n    documentation: str = \"https://docs.langflow.org/components-embedding-models\"\n    icon = \"binary\"\n    name = \"EmbeddingModel\"\n    category = \"models\"\n\n    def update_build_config(self, build_config: dict, field_value: str, field_name: str | None = None):\n        \"\"\"Dynamically update build config with user-filtered model options.\"\"\"\n        return handle_model_input_update(\n            self,\n            dict(build_config),\n            field_value,\n            field_name,\n            cache_key_prefix=\"embedding_model_options\",\n            get_options_func=get_embedding_model_options,\n        )\n\n    inputs = [\n        ModelInput(\n            name=\"model\",\n            display_name=\"Embedding Model\",\n            info=\"Select your model provider\",\n            real_time_refresh=True,\n            required=True,\n            model_type=\"embedding\",\n            input_types=[\"Embeddings\"],  # Override default to accept Embeddings instead of LanguageModel\n        ),\n        SecretStrInput(\n            name=\"api_key\",\n            display_name=\"API Key\",\n            info=\"Overrides global provider settings. Leave blank to use your pre-configured API Key.\",\n            real_time_refresh=True,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"api_base\",\n            display_name=\"API Base URL\",\n            info=\"Base URL for the API. Leave empty for default.\",\n            advanced=True,\n        ),\n        # Watson-specific inputs\n        DropdownInput(\n            name=\"base_url_ibm_watsonx\",\n            display_name=\"watsonx API Endpoint\",\n            info=\"The base URL of the API (IBM watsonx.ai only)\",\n            options=IBM_WATSONX_URLS,\n            value=IBM_WATSONX_URLS[0],\n            show=False,\n            real_time_refresh=True,\n        ),\n        MessageTextInput(\n            name=\"project_id\",\n            display_name=\"Project ID\",\n            info=\"IBM watsonx.ai Project ID (required for IBM watsonx.ai)\",\n            show=False,\n        ),\n        # Ollama-specific input\n        StrInput(\n            name=\"ollama_base_url\",\n            display_name=\"Ollama API URL\",\n            info=f\"Endpoint of the Ollama API (Ollama only). Defaults to {DEFAULT_OLLAMA_URL}\",\n            value=DEFAULT_OLLAMA_URL,\n            show=False,\n            real_time_refresh=True,\n        ),\n        IntInput(\n            name=\"dimensions\",\n            display_name=\"Dimensions\",\n            info=\"The number of dimensions the resulting output embeddings should have. \"\n            \"Only supported by certain models.\",\n            advanced=True,\n        ),\n        IntInput(\n            name=\"chunk_size\",\n            display_name=\"Chunk Size\",\n            advanced=True,\n            value=1000,\n        ),\n        FloatInput(\n            name=\"request_timeout\",\n            display_name=\"Request Timeout\",\n            advanced=True,\n        ),\n        IntInput(\n            name=\"max_retries\",\n            display_name=\"Max Retries\",\n            advanced=True,\n            value=3,\n        ),\n        BoolInput(\n            name=\"show_progress_bar\",\n            display_name=\"Show Progress Bar\",\n            advanced=True,\n        ),\n        DictInput(\n            name=\"model_kwargs\",\n            display_name=\"Model Kwargs\",\n            advanced=True,\n            info=(\n                \"Additional keyword arguments to pass to the model. Only used by providers that support this parameter \"\n                \"(e.g. OpenAI, Google Generative AI). \"\n                \"Ignored for providers that do not include it in their parameter mapping.\"\n            ),\n        ),\n        IntInput(\n            name=\"truncate_input_tokens\",\n            display_name=\"Truncate Input Tokens\",\n            advanced=True,\n            value=200,\n            show=False,\n        ),\n        BoolInput(\n            name=\"input_text\",\n            display_name=\"Include the original text in the output\",\n            value=True,\n            advanced=True,\n            show=False,\n        ),\n    ]\n\n    def build_embeddings(self) -> Embeddings:\n        \"\"\"Build and return an embeddings instance based on the selected model.\"\"\"\n        return get_embeddings(\n            model=self.model,\n            user_id=self.user_id,\n            api_key=self.api_key,\n            api_base=self.api_base,\n            dimensions=self.dimensions,\n            chunk_size=self.chunk_size,\n            request_timeout=self.request_timeout,\n            max_retries=self.max_retries,\n            show_progress_bar=self.show_progress_bar,\n            model_kwargs=self.model_kwargs,\n            watsonx_url=getattr(self, \"base_url_ibm_watsonx\", None),\n            watsonx_project_id=getattr(self, \"project_id\", None),\n            watsonx_truncate_input_tokens=getattr(self, \"truncate_input_tokens\", None),\n            watsonx_input_text=getattr(self, \"input_text\", None),\n            ollama_base_url=getattr(self, \"ollama_base_url\", None),\n        )\n"
+                "value": "from lfx.base.embeddings.model import LCEmbeddingsModel\nfrom lfx.base.models.unified_models import (\n    get_embedding_model_options,\n    get_embeddings,\n    handle_model_input_update,\n)\nfrom lfx.base.models.watsonx_constants import IBM_WATSONX_URLS\nfrom lfx.field_typing import Embeddings\nfrom lfx.io import (\n    BoolInput,\n    DictInput,\n    DropdownInput,\n    FloatInput,\n    IntInput,\n    MessageTextInput,\n    ModelInput,\n    SecretStrInput,\n    StrInput,\n)\n\nDEFAULT_OLLAMA_URL = \"http://localhost:11434\"\n\n\nclass EmbeddingModelComponent(LCEmbeddingsModel):\n    display_name = \"Embedding Model\"\n    description = \"Generate embeddings using a specified provider.\"\n    documentation: str = \"https://docs.langflow.org/components-embedding-models\"\n    icon = \"binary\"\n    name = \"EmbeddingModel\"\n    category = \"models\"\n\n    def update_build_config(self, build_config: dict, field_value: str, field_name: str | None = None):\n        \"\"\"Dynamically update build config with user-filtered model options.\"\"\"\n        return handle_model_input_update(\n            self,\n            dict(build_config),\n            field_value,\n            field_name,\n            cache_key_prefix=\"embedding_model_options\",\n            get_options_func=get_embedding_model_options,\n        )\n\n    inputs = [\n        ModelInput(\n            name=\"model\",\n            display_name=\"Embedding Model\",\n            info=\"Select your model provider\",\n            real_time_refresh=True,\n            required=True,\n            model_type=\"embedding\",\n            input_types=[\"Embeddings\"],  # Override default to accept Embeddings instead of LanguageModel\n        ),\n        SecretStrInput(\n            name=\"api_key\",\n            display_name=\"API Key\",\n            info=\"Overrides global provider settings. Leave blank to use your pre-configured API Key.\",\n            real_time_refresh=True,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"api_base\",\n            display_name=\"API Base URL\",\n            info=\"Base URL for the API. Leave empty for default.\",\n            advanced=True,\n        ),\n        # Watson-specific inputs\n        DropdownInput(\n            name=\"base_url_ibm_watsonx\",\n            display_name=\"watsonx API Endpoint\",\n            info=\"The base URL of the API (IBM watsonx.ai only)\",\n            options=IBM_WATSONX_URLS,\n            value=IBM_WATSONX_URLS[0],\n            combobox=True,\n            show=False,\n            real_time_refresh=True,\n        ),\n        MessageTextInput(\n            name=\"project_id\",\n            display_name=\"Project ID\",\n            info=\"IBM watsonx.ai Project ID (required for IBM watsonx.ai)\",\n            show=False,\n        ),\n        # Ollama-specific input\n        StrInput(\n            name=\"ollama_base_url\",\n            display_name=\"Ollama API URL\",\n            info=f\"Endpoint of the Ollama API (Ollama only). Defaults to {DEFAULT_OLLAMA_URL}\",\n            value=DEFAULT_OLLAMA_URL,\n            show=False,\n            real_time_refresh=True,\n        ),\n        IntInput(\n            name=\"dimensions\",\n            display_name=\"Dimensions\",\n            info=\"The number of dimensions the resulting output embeddings should have. \"\n            \"Only supported by certain models.\",\n            advanced=True,\n        ),\n        IntInput(\n            name=\"chunk_size\",\n            display_name=\"Chunk Size\",\n            advanced=True,\n            value=1000,\n        ),\n        FloatInput(\n            name=\"request_timeout\",\n            display_name=\"Request Timeout\",\n            advanced=True,\n        ),\n        IntInput(\n            name=\"max_retries\",\n            display_name=\"Max Retries\",\n            advanced=True,\n            value=3,\n        ),\n        BoolInput(\n            name=\"show_progress_bar\",\n            display_name=\"Show Progress Bar\",\n            advanced=True,\n        ),\n        DictInput(\n            name=\"model_kwargs\",\n            display_name=\"Model Kwargs\",\n            advanced=True,\n            info=(\n                \"Additional keyword arguments to pass to the model. Only used by providers that support this parameter \"\n                \"(e.g. OpenAI, Google Generative AI). \"\n                \"Ignored for providers that do not include it in their parameter mapping.\"\n            ),\n        ),\n        IntInput(\n            name=\"truncate_input_tokens\",\n            display_name=\"Truncate Input Tokens\",\n            advanced=True,\n            value=200,\n            show=False,\n        ),\n        BoolInput(\n            name=\"input_text\",\n            display_name=\"Include the original text in the output\",\n            value=True,\n            advanced=True,\n            show=False,\n        ),\n    ]\n\n    def build_embeddings(self) -> Embeddings:\n        \"\"\"Build and return an embeddings instance based on the selected model.\"\"\"\n        return get_embeddings(\n            model=self.model,\n            user_id=self.user_id,\n            api_key=self.api_key,\n            api_base=self.api_base,\n            dimensions=self.dimensions,\n            chunk_size=self.chunk_size,\n            request_timeout=self.request_timeout,\n            max_retries=self.max_retries,\n            show_progress_bar=self.show_progress_bar,\n            model_kwargs=self.model_kwargs,\n            watsonx_url=getattr(self, \"base_url_ibm_watsonx\", None),\n            watsonx_project_id=getattr(self, \"project_id\", None),\n            watsonx_truncate_input_tokens=getattr(self, \"truncate_input_tokens\", None),\n            watsonx_input_text=getattr(self, \"input_text\", None),\n            ollama_base_url=getattr(self, \"ollama_base_url\", None),\n        )\n"
               },
               "dimensions": {
                 "_input_type": "IntInput",
@@ -7355,7 +7544,7 @@
                 "type": "bool",
                 "value": true
               },
-              "is_refresh": true,
+              "is_refresh": false,
               "max_retries": {
                 "_input_type": "IntInput",
                 "advanced": true,
@@ -7398,6 +7587,7 @@
                 ],
                 "list": false,
                 "list_add_label": "Add More",
+                "load_from_db": false,
                 "model_type": "embedding",
                 "name": "model",
                 "options": [
@@ -7463,6 +7653,96 @@
                     },
                     "name": "text-embedding-ada-002",
                     "provider": "OpenAI"
+                  },
+                  {
+                    "category": "IBM WatsonX",
+                    "icon": "WatsonxAI",
+                    "metadata": {
+                      "embedding_class": "WatsonxEmbeddings",
+                      "model_type": "embeddings",
+                      "param_mapping": {
+                        "api_key": "apikey",
+                        "model_id": "model_id",
+                        "project_id": "project_id",
+                        "request_timeout": "request_timeout",
+                        "space_id": "space_id",
+                        "url": "url"
+                      }
+                    },
+                    "name": "ibm/granite-embedding-278m-multilingual",
+                    "provider": "IBM WatsonX"
+                  },
+                  {
+                    "category": "IBM WatsonX",
+                    "icon": "WatsonxAI",
+                    "metadata": {
+                      "embedding_class": "WatsonxEmbeddings",
+                      "model_type": "embeddings",
+                      "param_mapping": {
+                        "api_key": "apikey",
+                        "model_id": "model_id",
+                        "project_id": "project_id",
+                        "request_timeout": "request_timeout",
+                        "space_id": "space_id",
+                        "url": "url"
+                      }
+                    },
+                    "name": "ibm/slate-125m-english-rtrvr-v2",
+                    "provider": "IBM WatsonX"
+                  },
+                  {
+                    "category": "IBM WatsonX",
+                    "icon": "WatsonxAI",
+                    "metadata": {
+                      "embedding_class": "WatsonxEmbeddings",
+                      "model_type": "embeddings",
+                      "param_mapping": {
+                        "api_key": "apikey",
+                        "model_id": "model_id",
+                        "project_id": "project_id",
+                        "request_timeout": "request_timeout",
+                        "space_id": "space_id",
+                        "url": "url"
+                      }
+                    },
+                    "name": "ibm/slate-30m-english-rtrvr-v2",
+                    "provider": "IBM WatsonX"
+                  },
+                  {
+                    "category": "IBM WatsonX",
+                    "icon": "WatsonxAI",
+                    "metadata": {
+                      "embedding_class": "WatsonxEmbeddings",
+                      "model_type": "embeddings",
+                      "param_mapping": {
+                        "api_key": "apikey",
+                        "model_id": "model_id",
+                        "project_id": "project_id",
+                        "request_timeout": "request_timeout",
+                        "space_id": "space_id",
+                        "url": "url"
+                      }
+                    },
+                    "name": "intfloat/multilingual-e5-large",
+                    "provider": "IBM WatsonX"
+                  },
+                  {
+                    "category": "IBM WatsonX",
+                    "icon": "WatsonxAI",
+                    "metadata": {
+                      "embedding_class": "WatsonxEmbeddings",
+                      "model_type": "embeddings",
+                      "param_mapping": {
+                        "api_key": "apikey",
+                        "model_id": "model_id",
+                        "project_id": "project_id",
+                        "request_timeout": "request_timeout",
+                        "space_id": "space_id",
+                        "url": "url"
+                      }
+                    },
+                    "name": "sentence-transformers/all-minilm-l6-v2",
+                    "provider": "IBM WatsonX"
                   }
                 ],
                 "override_skip": false,
@@ -7478,7 +7758,6 @@
                 "type": "model",
                 "value": [
                   {
-                    "category": "OpenAI",
                     "icon": "OpenAI",
                     "metadata": {
                       "embedding_class": "OpenAIEmbeddings",
@@ -7544,16 +7823,16 @@
               },
               "project_id": {
                 "_input_type": "MessageTextInput",
-                "advanced": false,
+                "advanced": true,
                 "display_name": "Project ID",
                 "dynamic": false,
-                "info": "IBM watsonx.ai Project ID (required for IBM watsonx.ai)",
+                "info": "Falls back to WATSONX_PROJECT_ID environment variable",
                 "input_types": [
                   "Message"
                 ],
                 "list": false,
                 "list_add_label": "Add More",
-                "load_from_db": false,
+                "load_from_db": true,
                 "name": "project_id",
                 "override_skip": false,
                 "placeholder": "",
@@ -7565,7 +7844,7 @@
                 "trace_as_metadata": true,
                 "track_in_telemetry": false,
                 "type": "str",
-                "value": ""
+                "value": "WATSONX_PROJECT_ID"
               },
               "request_timeout": {
                 "_input_type": "FloatInput",
@@ -7643,23 +7922,23 @@
           "x": 2183.7808538410127,
           "y": 2095.003494871439
         },
-        "selected": false,
+        "selected": true,
         "type": "genericNode"
       }
     ],
     "viewport": {
-      "x": 64.9552082060377,
-      "y": -83.58254357131239,
-      "zoom": 0.34893413159301545
+      "x": -798.5646284783511,
+      "y": -1114.1894840221698,
+      "zoom": 0.7194800700371419
     }
   },
   "description": "This flow is to ingest the URL to open search.",
   "endpoint_name": null,
   "id": "72c3d17c-2dac-4a73-b48a-6518473d7830",
   "is_component": false,
-  "last_tested_version": "1.9.0.dev38",
-  "mcp_enabled": true,
+  "last_tested_version": "1.9.0",
   "locked": true,
+  "mcp_enabled": true,
   "name": "OpenSearch URL Ingestion Flow",
   "tags": [
     "openai",
